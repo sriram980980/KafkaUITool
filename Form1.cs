@@ -9,6 +9,8 @@ public partial class Form1 : Form
     private ToolTip clusterToolTip = new ToolTip();
     private readonly string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "KafkaTool.log");
     private readonly KafkaService kafkaService = new KafkaService();
+    private readonly string clustersFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "clusters.json");
+    private readonly string lastConnectedFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "last_connected.txt");
 
     public Form1()
     {
@@ -24,6 +26,18 @@ public partial class Form1 : Form
         clustersListBox.MouseMove += clustersListBox_MouseMove;
         clustersListBox.DoubleClick += clustersListBox_DoubleClick;
         Log("Application started");
+        LoadClustersFromFile();
+        string? lastCluster = LoadLastConnectedCluster();
+        if (!string.IsNullOrWhiteSpace(lastCluster))
+        {
+            var cluster = clusters.FirstOrDefault(c => c.Name == lastCluster);
+            if (cluster != null)
+            {
+                // Connect to the last connected cluster
+                clustersListBox.SelectedItem = cluster;
+                clustersListBox_DoubleClick(this, EventArgs.Empty);
+            }
+        }
     }
 
     private void Log(string message)
@@ -35,6 +49,58 @@ public partial class Form1 : Form
             File.AppendAllText(logFilePath, logEntry + Environment.NewLine);
         }
         catch { /* Ignore file errors */ }
+    }
+
+    private void SaveClustersToFile()
+    {
+        try
+        {
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(clusters);
+            File.WriteAllText(clustersFilePath, json);
+        }
+        catch (Exception ex)
+        {
+            Log($"Error saving clusters: {ex.Message}");
+        }
+    }
+
+    private void LoadClustersFromFile()
+    {
+        try
+        {
+            if (File.Exists(clustersFilePath))
+            {
+                var json = File.ReadAllText(clustersFilePath);
+                var loaded = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ClusterInfo>>(json);
+                if (loaded != null)
+                {
+                    clusters = loaded;
+                    clustersListBox.Items.Clear();
+                    foreach (var c in clusters)
+                        clustersListBox.Items.Add(c);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Error loading clusters: {ex.Message}");
+        }
+    }
+
+    private void SaveLastConnectedCluster(string clusterName)
+    {
+        try { File.WriteAllText(lastConnectedFilePath, clusterName); } catch { }
+    }
+
+    private string? LoadLastConnectedCluster()
+    {
+        try
+        {
+            if (File.Exists(lastConnectedFilePath))
+                return File.ReadAllText(lastConnectedFilePath).Trim();
+        }
+        catch { }
+        return null;
     }
 
     private void addClusterToolStripMenuItem_Click(object? sender, EventArgs? e)
@@ -79,6 +145,7 @@ public partial class Form1 : Form
                     var cluster = new ClusterInfo { Name = name, BrokerUrls = brokers };
                     clusters.Add(cluster);
                     clustersListBox.Items.Add(cluster);
+                    SaveClustersToFile();
                 }
             }
         }
@@ -129,6 +196,7 @@ public partial class Form1 : Form
                         cluster.Name = newName;
                         cluster.BrokerUrls = newBrokers;
                         clustersListBox.Items[clustersListBox.SelectedIndex] = cluster;
+                        SaveClustersToFile();
                     }
                 }
             }
@@ -148,6 +216,7 @@ public partial class Form1 : Form
         {
             clusters.RemoveAt(clustersListBox.SelectedIndex);
             clustersListBox.Items.RemoveAt(clustersListBox.SelectedIndex);
+            SaveClustersToFile();
         }
     }
 
@@ -624,12 +693,11 @@ public partial class Form1 : Form
             }
             cluster.Status = "Connecting";
             clustersListBox.Refresh();
-            // Simulate connection delay
             await Task.Delay(500);
-            // Here you would normally check the actual connection, e.g. by fetching metadata
             cluster.Status = "Connected";
             Log($"Connected to cluster: {cluster.Name}");
             clustersListBox.Refresh();
+            SaveLastConnectedCluster(cluster.Name);
             // Open cluster tab
             OpenClusterTab(cluster);
         }
