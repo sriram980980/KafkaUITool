@@ -23,8 +23,9 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 | 8    | Search for message body  with partition + offset or time range --slowest operation  | ⬜ Pending  |
 
 ## Work Progress (as of 2025-06-04)
-- Clusters are now persisted to `clusters.json` in the application directory. Add, edit, and remove actions update this file automatically.
-- The last connected cluster is saved to `last_connected.txt` and, on startup, the app auto-connects to this cluster (if present). All other clusters are loaded but not connected.
+- Clusters are now persisted to `clusters.json` in the application directory. Each cluster has a `ConnectByDefault` flag.
+- When a cluster is connected, its `ConnectByDefault` is set to true (all others are set to false). On startup, the app auto-connects to the cluster with `ConnectByDefault: true`.
+- The previous `last_connected.txt` file is no longer used; all state is in `clusters.json`.
 - UI: Topic action buttons are properly aligned and sized, and the first topic tab is always visible.
 - All user actions and errors are logged to both the console and `KafkaTool.log`.
 - Topic management (create, edit, delete) is fully functional and error-free.

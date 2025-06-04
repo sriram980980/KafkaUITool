@@ -10,7 +10,6 @@ public partial class Form1 : Form
     private readonly string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "KafkaTool.log");
     private readonly KafkaService kafkaService = new KafkaService();
     private readonly string clustersFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "clusters.json");
-    private readonly string lastConnectedFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "last_connected.txt");
 
     public Form1()
     {
@@ -27,16 +26,11 @@ public partial class Form1 : Form
         clustersListBox.DoubleClick += clustersListBox_DoubleClick;
         Log("Application started");
         LoadClustersFromFile();
-        string? lastCluster = LoadLastConnectedCluster();
-        if (!string.IsNullOrWhiteSpace(lastCluster))
+        var defaultCluster = clusters.FirstOrDefault(c => c.ConnectByDefault);
+        if (defaultCluster != null)
         {
-            var cluster = clusters.FirstOrDefault(c => c.Name == lastCluster);
-            if (cluster != null)
-            {
-                // Connect to the last connected cluster
-                clustersListBox.SelectedItem = cluster;
-                clustersListBox_DoubleClick(this, EventArgs.Empty);
-            }
+            clustersListBox.SelectedItem = defaultCluster;
+            clustersListBox_DoubleClick(this, EventArgs.Empty);
         }
     }
 
@@ -85,22 +79,6 @@ public partial class Form1 : Form
         {
             Log($"Error loading clusters: {ex.Message}");
         }
-    }
-
-    private void SaveLastConnectedCluster(string clusterName)
-    {
-        try { File.WriteAllText(lastConnectedFilePath, clusterName); } catch { }
-    }
-
-    private string? LoadLastConnectedCluster()
-    {
-        try
-        {
-            if (File.Exists(lastConnectedFilePath))
-                return File.ReadAllText(lastConnectedFilePath).Trim();
-        }
-        catch { }
-        return null;
     }
 
     private void addClusterToolStripMenuItem_Click(object? sender, EventArgs? e)
@@ -697,13 +675,16 @@ public partial class Form1 : Form
                 MessageBox.Show("Already connected to this cluster.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+            // Set ConnectByDefault for this cluster, clear for others
+            foreach (var c in clusters) c.ConnectByDefault = false;
+            cluster.ConnectByDefault = true;
+            SaveClustersToFile();
             cluster.Status = "Connecting";
             clustersListBox.Refresh();
             await Task.Delay(500);
             cluster.Status = "Connected";
             Log($"Connected to cluster: {cluster.Name}");
             clustersListBox.Refresh();
-            SaveLastConnectedCluster(cluster.Name);
             // Open cluster tab
             OpenClusterTab(cluster);
         }
