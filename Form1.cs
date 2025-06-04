@@ -344,10 +344,10 @@ public partial class Form1 : Form
         // Add a horizontal FlowLayoutPanel for the topic action buttons
         var topicButtonPanel = new FlowLayoutPanel {
             Dock = DockStyle.Top,
-            Height = 16,
+            Height = 52, // Fix: ensure enough height for buttons
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = false,
-            Padding = new Padding(2, 2, 0, 4),
+            Padding = new Padding(8, 8, 0, 8), // Fix: add padding for visual clarity
             Margin = new Padding(0, 0, 0, 0),
             AutoSize = false
         };
@@ -372,6 +372,7 @@ public partial class Form1 : Form
         var topicsVerticalTabs = new TabControl { Dock = DockStyle.Fill, Alignment = TabAlignment.Left, SizeMode = TabSizeMode.FillToRight, ItemSize = new Size(30, 120), DrawMode = TabDrawMode.OwnerDrawFixed };
         topicsVerticalTabs.DrawItem += (s, e) =>
         {
+            Log("Drawing topic tab item"+e.Index);
             if (s is not TabControl tabControl) return;
             if (e.Index < 0 || e.Index >= tabControl.TabPages.Count) return;
             var tabPage = tabControl.TabPages[e.Index];
@@ -412,6 +413,11 @@ public partial class Form1 : Form
         // Load topics asynchronously
         var topics = await GetTopicsAsync(cluster.BrokerUrls);
         topicsVerticalTabs.TabPages.Clear();
+        
+            var topicTab1 = new TabPage("");
+            // You can add more controls/info to each topicTab here
+            topicsVerticalTabs.TabPages.Add(topicTab1);
+
         foreach (var topic in topics)
         {
             var topicTab = new TabPage(topic);
@@ -510,7 +516,7 @@ public partial class Form1 : Form
         topicButtonPanel.Height = 52;
         // Enable/disable logic for Delete/Edit
         void UpdateTopicButtons() {
-            bool hasSelection = topicsVerticalTabs.SelectedTab != null;
+            bool hasSelection = topicsVerticalTabs.SelectedTab != null && topicsVerticalTabs.SelectedTab.Text.Length> 0;
             editTopicButton.Enabled = hasSelection;
             deleteTopicButton.Enabled = hasSelection;
         }
