@@ -34,6 +34,8 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 - [x] Store and display added clusters in the UI (with name and brokers)
 - [x] Allow editing/removing clusters
 - [x] Add option to save clusters (in-memory for now)
+- [x] Show cluster connection status (color/icon) and allow double-click to connect
+- [x] Log all user actions and errors to both console and a log file
 
 ### 3. Topic & Partition Management
 - [ ] List topics for each cluster
@@ -74,7 +76,7 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
    ```
 5. **Run the application:**
    ```sh
-   dotnet run
+   dotnet run --project KafkaTool/KafkaTool.csproj
    ```
 
 ## User Guide
@@ -87,13 +89,18 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 - Right-click a cluster in the list to edit its name or broker URLs, or to remove it.
 - Use the context menu's "Save Changes" to save the current in-memory list (future: persistent storage).
 
+### Connecting to a Cluster
+- Double-click a cluster to attempt a connection. The status and icon will update to show connecting, connected, or failed.
+- While connecting, the cluster will show a yellow color and be temporarily unclickable.
+- Connection attempts and results are logged to both the console and a `KafkaTool.log` file in the app directory.
+
 ### Next Steps
 - After adding clusters, you will be able to view topics, partitions, producers, consumers, and messages as features are implemented.
 - Use the menu options to manage Kafka resources and inspect messages.
 
 ### Troubleshooting
 - Ensure your Kafka brokers are reachable from your machine.
-- If you encounter errors, check the application output and logs for details.
+- If you encounter errors, check the application output and logs for details (see `KafkaTool.log`).
 
 ---
 For questions or contributions, please open an issue or pull request on GitHub.
