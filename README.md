@@ -42,10 +42,12 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 - [ ] Show partitions for each topic
 - [ ] Add new topic
 - [ ] Change topic config (e.g., retention)
+- [ ] Filter topic if lot of topics to display 
 
 ### 4. Producer Management
 - [ ] List producers for each cluster
 - [ ] Onboard (add) new producer
+- [ ] Filter Producers if lot of # to display 
 
 ### 5. Consumer Management
 - [ ] List consumers for each cluster
