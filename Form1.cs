@@ -377,6 +377,25 @@ public partial class Form1 : Form
         };
         topicsTab.Controls.Add(topicsVerticalTabs);
         topicsTab.Controls.SetChildIndex(topicsVerticalTabs, 1); // Ensure topicsVerticalTabs is below the button panel
+        // Add a vertical TableLayoutPanel to hold the button panel and the topicsVerticalTabs
+        var topicsLayout = new TableLayoutPanel {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            AutoSize = false,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = Color.White
+        };
+        topicsLayout.RowStyles.Clear();
+        topicsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // Button panel row
+        topicsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Tabs row
+        // Remove button panel and topicsVerticalTabs from topicsTab if present
+        if (topicButtonPanel.Parent != null) topicButtonPanel.Parent.Controls.Remove(topicButtonPanel);
+        if (topicsVerticalTabs.Parent != null) topicsVerticalTabs.Parent.Controls.Remove(topicsVerticalTabs);
+        topicsLayout.Controls.Add(topicButtonPanel, 0, 0);
+        topicsLayout.Controls.Add(topicsVerticalTabs, 0, 1);
+        topicsTab.Controls.Clear();
+        topicsTab.Controls.Add(topicsLayout);
         subTabControl.TabPages.Add(topicsTab);
         // Consumers tab
         var consumersTab = new TabPage("Consumers");
@@ -392,10 +411,6 @@ public partial class Form1 : Form
         var topics = await GetTopicsAsync(cluster.BrokerUrls);
         topicsVerticalTabs.TabPages.Clear();
         
-            var topicTab1 = new TabPage("");
-            // You can add more controls/info to each topicTab here
-            topicsVerticalTabs.TabPages.Add(topicTab1);
-
         foreach (var topic in topics)
         {
             var topicTab = new TabPage(topic);
@@ -631,6 +646,129 @@ public partial class Form1 : Form
                 g.DrawString(text, font, brush, -textSize.Width / 2, -textSize.Height / 2);
                 g.ResetTransform();
             }
+        };
+        // Handle topic tab selection to load sub-tabs for Partitions
+        topicsVerticalTabs.SelectedIndexChanged += async (s, e) =>
+        {
+            var selectedTab = topicsVerticalTabs.SelectedTab;
+            if (selectedTab == null || string.IsNullOrWhiteSpace(selectedTab.Text)) return;
+            // Remove any previous sub-tab controls
+            if (selectedTab.Controls.Count > 0)
+                selectedTab.Controls.Clear();
+            // Create sub-tab control for Partitions
+            var subTabControl = new TabControl { Dock = DockStyle.Fill };
+            var partitionsTab = new TabPage("Partitions");
+            subTabControl.TabPages.Add(partitionsTab);
+            selectedTab.Controls.Add(subTabControl);
+            // Use TableLayoutPanel for clean layout
+            var table = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 4,
+                AutoSize = false,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.White
+            };
+            table.ColumnStyles.Clear();
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            table.RowStyles.Clear();
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 32)); // Partition selector
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 32)); // Depth label
+            table.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Messages
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 40)); // Offset controls
+            partitionsTab.Controls.Clear();
+            partitionsTab.Controls.Add(table);
+            // Partition selector
+            var partitionList = new ComboBox {
+                Dock = DockStyle.Fill,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                MinimumSize = new Size(80, 24)
+            };
+            table.Controls.Add(new Label { Text = "Partition:", Anchor = AnchorStyles.Left, AutoSize = true }, 0, 0);
+            table.Controls.Add(partitionList, 1, 0);
+            // Depth label
+            var lblDepth = new Label { Text = "", Anchor = AnchorStyles.Left, AutoSize = true };
+            table.Controls.Add(new Label { Text = "Depth:", Anchor = AnchorStyles.Left, AutoSize = true }, 0, 1);
+            table.Controls.Add(lblDepth, 1, 1);
+            // Messages box
+            var messagesBox = new TextBox {
+                Dock = DockStyle.Fill,
+                Multiline = true,
+                ScrollBars = ScrollBars.Vertical,
+                ReadOnly = true,
+                MinimumSize = new Size(200, 80)
+            };
+            table.SetColumnSpan(messagesBox, 2);
+            table.Controls.Add(messagesBox, 0, 2);
+            // Offset controls
+            var offsetPanel = new FlowLayoutPanel {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoSize = false,
+                Height = 36
+            };
+            var lblFrom = new Label { Text = "From Offset:", AutoSize = true };
+            var txtFrom = new TextBox { Width = 80 };
+            var lblTo = new Label { Text = "To Offset:", AutoSize = true };
+            var txtTo = new TextBox { Width = 80 };
+            var btnFetch = new Button { Text = "Fetch", Width = 60 };
+            offsetPanel.Controls.Add(lblFrom);
+            offsetPanel.Controls.Add(txtFrom);
+            offsetPanel.Controls.Add(lblTo);
+            offsetPanel.Controls.Add(txtTo);
+            offsetPanel.Controls.Add(btnFetch);
+            table.SetColumnSpan(offsetPanel, 2);
+            table.Controls.Add(offsetPanel, 0, 3);
+            // Load partitions and depth
+            try {
+                var partitions = await kafkaService.GetPartitionsAsync(cluster.BrokerUrls, selectedTab.Text);
+                partitionList.Items.AddRange(partitions.Select(p => p.ToString()).ToArray());
+                if (partitionList.Items.Count > 0) partitionList.SelectedIndex = 0;
+                // Show depth for first partition
+                if (partitionList.SelectedItem != null && int.TryParse(partitionList.SelectedItem.ToString(), out int partition))
+                {
+                    (long low, long high) = await kafkaService.GetPartitionDepthAsync(cluster.BrokerUrls, selectedTab.Text, partition);
+                    lblDepth.Text = $"Earliest: {low}, Latest: {high - 1}";
+                }
+            } catch (Exception ex) {
+                Console.WriteLine($"Error loading partitions/depth: {ex.Message}");
+                lblDepth.Text = "Error loading partition info";
+            }
+            // Handler to update depth and load latest messages
+            async Task LoadPartitionInfo()
+            {
+                try {
+                    if (partitionList.SelectedItem == null) return;
+                    if (!int.TryParse(partitionList.SelectedItem.ToString(), out int partition)) return;
+                    (long low, long high) = await kafkaService.GetPartitionDepthAsync(cluster.BrokerUrls, selectedTab.Text, partition);
+                    lblDepth.Text = $"Earliest: {low}, Latest: {high - 1}";
+                    var messages = await kafkaService.GetLatestMessagesAsync(cluster.BrokerUrls, selectedTab.Text, partition, 10);
+                    messagesBox.Text = string.Join("\r\n\r\n", messages);
+                } catch (Exception ex) {
+                    Console.WriteLine($"Error loading partition info/messages: {ex.Message}");
+                    lblDepth.Text = "Error loading partition info";
+                }
+            }
+            partitionList.SelectedIndexChanged += async (s2, e2) => await LoadPartitionInfo();
+            await LoadPartitionInfo();
+            // Handler to fetch messages between offsets
+            btnFetch.Click += async (s3, e3) =>
+            {
+                try {
+                    if (partitionList.SelectedItem == null) return;
+                    if (!int.TryParse(partitionList.SelectedItem.ToString(), out int partition)) return;
+                    if (!long.TryParse(txtFrom.Text, out long fromOffset) || !long.TryParse(txtTo.Text, out long toOffset))
+                    {
+                        MessageBox.Show("Please enter valid numeric offsets.");
+                        return;
+                    }
+                    var messages = await kafkaService.GetMessagesBetweenOffsetsAsync(cluster.BrokerUrls, selectedTab.Text, partition, fromOffset, toOffset);
+                    messagesBox.Text = string.Join("\r\n\r\n", messages);
+                } catch (Exception ex) {
+                    Console.WriteLine($"Error fetching messages: {ex.Message}");
+                }
+            };
         };
     }
 
