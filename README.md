@@ -15,7 +15,7 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 |------|-------------------------------------------------------------------------------------|-------------|
 | 1    | Create .NET 9.0 Project structure                                                   | ✅ Complete |
 | 2    | File menu: Add clusters (accept name and broker URLs)                               | ✅ Complete |
-| 3    | Display topics/partitions, add new, change config (retention, etc.)                 | ⬜ Pending  |
+| 3    | Display topics/partitions, add new, change config (retention, etc.)                 | ✅ Complete |
 | 4    | Display producers, onboard new                                                      | ⬜ Pending  |
 | 5    | Display consumers, show/set offsets                                                 | ⬜ Pending  |
 | 6    | Show messages in partition, display as ASCII/JSON/JSONPath                          | ⬜ Pending  |
@@ -48,10 +48,10 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 - [x] Log all user actions and errors to both console and a log file
 
 ### 3. Topic & Partition Management
-- [ ] List topics for each cluster
-- [ ] Show partitions for each topic
-- [ ] Add new topic
-- [ ] Change topic config (e.g., retention)
+- [x] List topics for each cluster
+- [x] Show partitions for each topic
+- [x] Add new topic
+- [x] Change topic config (e.g., retention)
 - [ ] Filter topic if lot of topics to display 
 
 ### 4. Producer Management
@@ -65,8 +65,8 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 - [ ] Set/Reset consumer committed offsets
 
 ### 6. Message Viewing & Search
-- [ ] Show messages in a partition
-- [ ] Display message in ASCII, JSON, or JSONPath format
+- [x] Show messages in a partition
+- [x] Display message in ASCII, JSON, or JSONPath format
 - [ ] Search messages by key or offset
 - [ ] Search message body (full text)
 
