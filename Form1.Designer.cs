@@ -32,6 +32,7 @@ partial class Form1
         this.menuStrip1 = new MenuStrip();
         this.fileToolStripMenuItem = new ToolStripMenuItem();
         this.addClusterToolStripMenuItem = new ToolStripMenuItem();
+        this.clustersListBox = new System.Windows.Forms.ListBox();
         // 
         // menuStrip1
         // 
@@ -58,11 +59,22 @@ partial class Form1
         this.addClusterToolStripMenuItem.Text = "Add Cluster";
         this.addClusterToolStripMenuItem.Click += new System.EventHandler(this.addClusterToolStripMenuItem_Click);
         // 
+        // clustersListBox
+        // 
+        this.clustersListBox.DisplayMember = "ToString";
+        this.clustersListBox.FormattingEnabled = true;
+        this.clustersListBox.Location = new System.Drawing.Point(12, 40);
+        this.clustersListBox.Name = "clustersListBox";
+        this.clustersListBox.Size = new System.Drawing.Size(350, 120);
+        this.clustersListBox.TabIndex = 1;
+        this.clustersListBox.ContextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
+        // 
         // Form1
         // 
         this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
         this.ClientSize = new System.Drawing.Size(800, 450);
         this.Controls.Add(this.menuStrip1);
+        this.Controls.Add(this.clustersListBox);
         this.MainMenuStrip = this.menuStrip1;
         this.Text = "KafkaTool";
     }
@@ -72,4 +84,5 @@ partial class Form1
     private System.Windows.Forms.MenuStrip menuStrip1;
     private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem addClusterToolStripMenuItem;
+    private System.Windows.Forms.ListBox clustersListBox;
 }

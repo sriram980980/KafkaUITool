@@ -14,7 +14,7 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 | Step | Feature Description                                                                 | Status      |
 |------|-------------------------------------------------------------------------------------|-------------|
 | 1    | Create .NET 9.0 Project structure                                                   | ✅ Complete |
-| 2    | File menu: Add clusters (accept broker URLs)                                        | ✅ Complete |
+| 2    | File menu: Add clusters (accept name and broker URLs)                               | ✅ Complete |
 | 3    | Display topics/partitions, add new, change config (retention, etc.)                 | ⬜ Pending  |
 | 4    | Display producers, onboard new                                                      | ⬜ Pending  |
 | 5    | Display consumers, show/set offsets                                                 | ⬜ Pending  |
@@ -30,9 +30,10 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 
 ### 2. Cluster Management
 - [x] Add File menu with "Add Cluster" option
-- [x] Prompt user for broker URLs
-- [ ] Store and display added clusters in the UI
-- [ ] Allow editing/removing clusters
+- [x] Prompt user for cluster name and broker URLs
+- [x] Store and display added clusters in the UI (with name and brokers)
+- [x] Allow editing/removing clusters
+- [x] Add option to save clusters (in-memory for now)
 
 ### 3. Topic & Partition Management
 - [ ] List topics for each cluster
@@ -79,8 +80,12 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 ## User Guide
 ### Adding a Kafka Cluster
 - Go to the `File` menu and select `Add Cluster`.
-- Enter one or more broker URLs (comma separated, e.g., `localhost:9092,localhost:9093`).
-- Click OK. The cluster will be added (future: will appear in the UI).
+- Enter a name for the cluster and one or more broker URLs (comma separated, e.g., `localhost:9092,localhost:9093`).
+- Click OK. The cluster will be added and shown in the list.
+
+### Editing or Removing a Cluster
+- Right-click a cluster in the list to edit its name or broker URLs, or to remove it.
+- Use the context menu's "Save Changes" to save the current in-memory list (future: persistent storage).
 
 ### Next Steps
 - After adding clusters, you will be able to view topics, partitions, producers, consumers, and messages as features are implemented.
