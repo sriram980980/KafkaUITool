@@ -275,17 +275,17 @@ public partial class Form1 : Form
         // Add a horizontal FlowLayoutPanel for the topic action buttons
         var topicButtonPanel = new FlowLayoutPanel {
             Dock = DockStyle.Top,
-            Height = 44,
+            Height = 16,
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = false,
-            Padding = new Padding(8, 4, 0, 4),
+            Padding = new Padding(2, 2, 0, 4),
             Margin = new Padding(0, 0, 0, 0),
             AutoSize = false
         };
         // Create the buttons
-        var deleteTopicButton = new Button { Text = "Delete", Width = 70, Height = 36, Enabled = false, Margin = new Padding(0, 0, 8, 0) };
-        var editTopicButton = new Button { Text = "Edit", Width = 70, Height = 36, Enabled = false, Margin = new Padding(0, 0, 8, 0) };
-        var createTopicButton = new Button { Width = 70, Height = 36, Margin = new Padding(0, 0, 0, 0) };
+        var deleteTopicButton = new Button { Text = "Delete", Width = 90, Height = 36, Enabled = false, Margin = new Padding(0, 0, 8, 0) };
+        var editTopicButton = new Button { Text = "Edit", Width = 90, Height = 36, Enabled = false, Margin = new Padding(0, 0, 8, 0) };
+        var createTopicButton = new Button { Width = 90, Height = 36, Margin = new Padding(0, 0, 0, 0) };
         // Custom paint for rotated text
         createTopicButton.Paint += (s, e) => {
             var btn = (Button)s!;
@@ -300,7 +300,7 @@ public partial class Form1 : Form
         topicButtonPanel.Controls.Add(createTopicButton);
         topicsTab.Controls.Add(topicButtonPanel);
         // Create a vertical TabControl for topics
-        var topicsVerticalTabs = new TabControl { Dock = DockStyle.Fill, Alignment = TabAlignment.Left, SizeMode = TabSizeMode.Fixed, ItemSize = new Size(30, 120), DrawMode = TabDrawMode.OwnerDrawFixed };
+        var topicsVerticalTabs = new TabControl { Dock = DockStyle.Fill, Alignment = TabAlignment.Left, SizeMode = TabSizeMode.FillToRight, ItemSize = new Size(30, 120), DrawMode = TabDrawMode.OwnerDrawFixed };
         topicsVerticalTabs.DrawItem += (s, e) =>
         {
             if (s is not TabControl tabControl) return;
@@ -393,9 +393,9 @@ public partial class Form1 : Form
                 prompt.CancelButton = btnCancel;
                 prompt.StartPosition = FormStartPosition.CenterParent;
                 // Set placeholder/cue banner for topic properties (WinForms hack)
-                try {
-                    NativeMethods.SetCueBanner(txtProps, "compression.type=producer");
-                } catch { /* ignore if fails */ }
+                // try {
+                //     NativeMethods.SetCueBanner(txtProps, "compression.type=producer");
+                // } catch { /* ignore if fails */ }
                 if (prompt.ShowDialog() == DialogResult.OK)
                 {
                     string topicName = txtName.Text.Trim();
@@ -431,22 +431,40 @@ public partial class Form1 : Form
                 }
             }
         };
-        // Enable/disable buttons based on selection
+        // --- Button alignment and enable/disable logic ---
+        deleteTopicButton.Width = editTopicButton.Width = createTopicButton.Width = 90;
+        deleteTopicButton.Height = editTopicButton.Height = createTopicButton.Height = 36;
+        deleteTopicButton.Margin = new Padding(0, 0, 8, 0);
+        editTopicButton.Margin = new Padding(0, 0, 8, 0);
+        createTopicButton.Margin = new Padding(0, 0, 0, 0);
+        topicButtonPanel.Padding = new Padding(8, 8, 0, 8);
+        topicButtonPanel.Height = 52;
+        // Enable/disable logic for Delete/Edit
         void UpdateTopicButtons() {
             bool hasSelection = topicsVerticalTabs.SelectedTab != null;
             editTopicButton.Enabled = hasSelection;
             deleteTopicButton.Enabled = hasSelection;
         }
+        // Remove previous handler if needed (safe pattern)
+        topicsVerticalTabs.SelectedIndexChanged -= (s, e) => UpdateTopicButtons();
         topicsVerticalTabs.SelectedIndexChanged += (s, e) => UpdateTopicButtons();
         UpdateTopicButtons();
-        // Edit Topic logic (UI only)
-        editTopicButton.Click += async (s, e) => {
+        // Remove previous event handlers to avoid multiple registrations
+        editTopicButton.Click -= EditTopicHandler;
+        deleteTopicButton.Click -= DeleteTopicHandler;
+        // Register handlers only once per cluster tab
+        editTopicButton.Click += EditTopicHandler;
+        deleteTopicButton.Click += DeleteTopicHandler;
+        // Handler methods
+        async void EditTopicHandler(object? s, EventArgs e)
+        {
             var selectedTab = topicsVerticalTabs.SelectedTab;
             if (selectedTab == null) return;
             // Fetch current topic config from KafkaService
-            Dictionary<string, string> currentConfig = null;
+            var currentConfig = new Dictionary<string, string>();
             try {
-                currentConfig = await kafkaService.GetTopicConfigAsync(cluster.BrokerUrls, selectedTab.Text);
+                var fetched = await kafkaService.GetTopicConfigAsync(cluster.BrokerUrls, selectedTab.Text);
+                if (fetched != null) currentConfig = fetched;
             } catch (Exception ex) {
                 Log($"Error fetching topic config: {ex.Message}");
                 MessageBox.Show($"Failed to fetch topic config: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -463,7 +481,7 @@ public partial class Form1 : Form
                     Multiline = true, ScrollBars = ScrollBars.Vertical,
                     Text = currentConfig != null ? string.Join("\r\n", currentConfig.Select(kv => $"{kv.Key}={kv.Value}")) : string.Empty
                 };
-                try { NativeMethods.SetCueBanner(txtProps, "compression.type=producer"); } catch { }
+                // try { NativeMethods.SetCueBanner(txtProps, "compression.type=producer"); } catch { }
                 var btnOk = new Button() { Text = "Save", Left = 120, Width = 80, Top = 150, DialogResult = DialogResult.OK };
                 var btnCancel = new Button() { Text = "Cancel", Left = 210, Width = 80, Top = 150, DialogResult = DialogResult.Cancel };
                 prompt.Controls.Add(lblProps);
@@ -497,9 +515,9 @@ public partial class Form1 : Form
                     }
                 }
             }
-        };
-        // Delete Topic logic
-        deleteTopicButton.Click += async (s, e) => {
+        }
+        async void DeleteTopicHandler(object? s, EventArgs e)
+        {
             var selectedTab = topicsVerticalTabs.SelectedTab;
             if (selectedTab == null) return;
             var result = MessageBox.Show($"Are you sure you want to delete topic '{selectedTab.Text}'?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
@@ -515,7 +533,7 @@ public partial class Form1 : Form
                     MessageBox.Show($"Failed to delete topic: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-        };
+        }
         // Move createTopicButton to the right
         createTopicButton.Left = 230;
         createTopicButton.Top = 0;
@@ -561,65 +579,6 @@ public partial class Form1 : Form
                 g.ResetTransform();
             }
         };
-        // Edit Topic logic
-        editTopicButton.Click += (s, e) =>
-        {
-            var selectedTab = topicsVerticalTabs.SelectedTab;
-            if (selectedTab == null) return;
-            using (var prompt = new Form())
-            {
-                prompt.Width = 400;
-                prompt.Height = 220;
-                prompt.Text = $"Edit Topic: {selectedTab.Text}";
-                var lblProps = new Label() { Left = 10, Top = 20, Text = "Topic Properties", Width = 120 };
-                var txtProps = new TextBox() {
-                    Left = 10, Top = 45, Width = 360, Height = 60,
-                    Multiline = true, ScrollBars = ScrollBars.Vertical,
-                    Text = string.Empty
-                };
-                try { NativeMethods.SetCueBanner(txtProps, "compression.type=producer"); } catch { }
-                var btnOk = new Button() { Text = "Save", Left = 120, Width = 80, Top = 120, DialogResult = DialogResult.OK };
-                var btnCancel = new Button() { Text = "Cancel", Left = 210, Width = 80, Top = 120, DialogResult = DialogResult.Cancel };
-                prompt.Controls.Add(lblProps);
-                prompt.Controls.Add(txtProps);
-                prompt.Controls.Add(btnOk);
-                prompt.Controls.Add(btnCancel);
-                prompt.AcceptButton = btnOk;
-                prompt.CancelButton = btnCancel;
-                prompt.StartPosition = FormStartPosition.CenterParent;
-                if (prompt.ShowDialog() == DialogResult.OK)
-                {
-                    string propsText = txtProps.Text;
-                    var propsDict = new Dictionary<string, string>();
-                    var lines = propsText.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var line in lines)
-                    {
-                        var trimmed = line.Trim();
-                        if (string.IsNullOrWhiteSpace(trimmed) || !trimmed.Contains("=")) continue;
-                        var idx = trimmed.IndexOf('=');
-                        var key = trimmed.Substring(0, idx).Trim();
-                        var value = trimmed.Substring(idx + 1).Trim();
-                        if (!string.IsNullOrEmpty(key)) propsDict[key] = value;
-                    }
-                    // TODO: Call KafkaService to update topic config (not implemented)
-                    Log($"Edit topic '{selectedTab.Text}' with properties: {string.Join(", ", propsDict.Select(kv => kv.Key + "=" + kv.Value))}");
-                    MessageBox.Show("Edit topic properties is not yet implemented.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
-        };
-        // Delete Topic logic
-        deleteTopicButton.Click += (s, e) =>
-        {
-            var selectedTab = topicsVerticalTabs.SelectedTab;
-            if (selectedTab == null) return;
-            var result = MessageBox.Show($"Are you sure you want to delete topic '{selectedTab.Text}'?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-            if (result == DialogResult.Yes)
-            {
-                // TODO: Call KafkaService to delete topic (not implemented)
-                Log($"Delete topic '{selectedTab.Text}' (not yet implemented)");
-                topicsVerticalTabs.TabPages.Remove(selectedTab);
-            }
-        };
     }
 
     // New method to return error message
@@ -655,30 +614,38 @@ public partial class Form1 : Form
             if (clustersListBox.SelectedIndex < 0)
                 return;
             var cluster = clustersListBox.SelectedItem as ClusterInfo;
-            if (cluster == null) return;
+            if (cluster == null)
+                return;
+            // Check if already connected
+            if (cluster.Status == "Connected")
+            {
+                MessageBox.Show("Already connected to this cluster.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
             cluster.Status = "Connecting";
             clustersListBox.Refresh();
-            // Connect logic here (simplified)
-            await Task.Delay(1000); // Simulate connection delay
+            // Simulate connection delay
+            await Task.Delay(500);
+            // Here you would normally check the actual connection, e.g. by fetching metadata
             cluster.Status = "Connected";
+            Log($"Connected to cluster: {cluster.Name}");
             clustersListBox.Refresh();
             // Open cluster tab
             OpenClusterTab(cluster);
         }
         catch (Exception ex)
         {
-            Log($"Error on double-click: {ex.Message}");
+            Log($"Error connecting to cluster: {ex.Message}");
+            MessageBox.Show($"Error connecting to cluster: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (clustersListBox.SelectedIndex >= 0)
+            {
+                var cluster = clustersListBox.SelectedItem as ClusterInfo;
+                if (cluster != null)
+                {
+                    cluster.Status = "Failed";
+                    clustersListBox.Refresh();
+                }
+            }
         }
-    }
-}
-
-internal static class NativeMethods
-{
-    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
-    public static extern Int32 SendMessage(IntPtr hWnd, int msg, int wParam, [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string lParam);
-    public static void SetCueBanner(TextBox box, string text)
-    {
-        const int EM_SETCUEBANNER = 0x1501;
-        SendMessage(box.Handle, EM_SETCUEBANNER, 0, text);
     }
 }
