@@ -19,8 +19,8 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 | 4    | Display producers, onboard new                                                      | ⬜ Pending  |
 | 5    | Display consumers, show/set offsets                                                 | ⬜ Pending  |
 | 6    | Show messages in partition, display as ASCII/JSON/JSONPath                          | ⬜ Pending  |
-| 7    | Search messages by key/offset                                                       | ⬜ Pending  |
-| 8    | Search message body                                                                 | ⬜ Pending  |
+| 7    | Search messages by offset/ header value search (slow   operation)                   | ⬜ Pending  |
+| 8    | Search for message body  with partition + offset or time range --slowest operation  | ⬜ Pending  |
 
 ## Subtasks & Clear Requirements
 ### 1. Project Setup
