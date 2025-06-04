@@ -48,7 +48,7 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 ### 5. Consumer Management
 - [ ] List consumers for each cluster
 - [ ] Show consumer offsets
-- [ ] Set consumer offsets
+- [ ] Set/Reset consumer committed offsets
 
 ### 6. Message Viewing & Search
 - [ ] Show messages in a partition
