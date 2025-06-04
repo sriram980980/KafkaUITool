@@ -61,11 +61,12 @@ partial class Form1
         // 
         // clustersListBox
         // 
-        this.clustersListBox.DisplayMember = "ToString";
+        this.clustersListBox.DisplayMember = "Name"; // Show only cluster name
         this.clustersListBox.FormattingEnabled = true;
         this.clustersListBox.Location = new System.Drawing.Point(12, 40);
         this.clustersListBox.Name = "clustersListBox";
-        this.clustersListBox.Size = new System.Drawing.Size(350, 120);
+        this.clustersListBox.Size = new System.Drawing.Size(150, this.ClientSize.Height - this.clustersListBox.Location.Y - 12); // Height 100% minus bottom margin
+        this.clustersListBox.Anchor = ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left);
         this.clustersListBox.TabIndex = 1;
         this.clustersListBox.ContextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
         // 
