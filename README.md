@@ -22,6 +22,15 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 | 7    | Search messages by offset/ header value search (slow   operation)                   | ⬜ Pending  |
 | 8    | Search for message body  with partition + offset or time range --slowest operation  | ⬜ Pending  |
 
+## Work Progress (as of 2025-06-04)
+- Clusters are now persisted to `clusters.json` in the application directory. Add, edit, and remove actions update this file automatically.
+- The last connected cluster is saved to `last_connected.txt` and, on startup, the app auto-connects to this cluster (if present). All other clusters are loaded but not connected.
+- UI: Topic action buttons are properly aligned and sized, and the first topic tab is always visible.
+- All user actions and errors are logged to both the console and `KafkaTool.log`.
+- Topic management (create, edit, delete) is fully functional and error-free.
+- Cluster connection status is shown with color/icon in the cluster list.
+- Next steps: Implement consumer and broker management, advanced Kafka operations, and message viewing/search features.
+
 ## Subtasks & Clear Requirements
 ### 1. Project Setup
 - [x] Initialize .NET 9.0 Windows Forms project
