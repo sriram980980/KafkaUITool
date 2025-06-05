@@ -964,6 +964,17 @@ public partial class Form1 : Form
         };
     }
 
+    // Helper to close all tabs for a given cluster name
+    private void CloseClusterTabs(string clusterName)
+    {
+        // Remove all mainTabControl tabs with the given cluster name
+        for (int i = mainTabControl.TabPages.Count - 1; i >= 0; i--)
+        {
+            if (mainTabControl.TabPages[i].Text == clusterName)
+                mainTabControl.TabPages.RemoveAt(i);
+        }
+    }
+
     // New method to return error message
     private async Task<(bool, string)> CreateTopicAsyncWithError(string brokerUrls, string topicName, int partitions, short replicas, Dictionary<string, string>? config = null)
     {
@@ -1010,7 +1021,12 @@ public partial class Form1 : Form
             {
                 c.ConnectByDefault = false;
                 if (!object.ReferenceEquals(c, cluster))
-                    c.Status = string.Empty; // Disconnect others
+                {
+                    // Disconnect others and close their tabs
+                    if (c.Status == "Connected")
+                        CloseClusterTabs(c.Name);
+                    c.Status = string.Empty;
+                }
             }
             cluster.ConnectByDefault = true;
             SaveClustersToFile();

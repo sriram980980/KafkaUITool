@@ -95,21 +95,23 @@ namespace KafkaTool
 
         public Task<List<KafkaMessage>> GetLatestMessagesAsync(string brokerUrls, string topic, int partition, int count)
         {
+            // Default partition to 0 if invalid
+            if (partition < 0) partition = 0;
             return Task.Run(() => {
                 var config = new Confluent.Kafka.ConsumerConfig
                 {
                     BootstrapServers = brokerUrls,
-                    GroupId = $"KafkaTool-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+                    GroupId = $"KafkaTool-{ Environment.UserName + "-" + Environment.MachineName}",
                 };
                 var messages = new List<KafkaMessage>();
-                using (var consumer = new Confluent.Kafka.ConsumerBuilder<Ignore, string>(config).Build())
+                using (var consumer = new Confluent.Kafka.ConsumerBuilder<string, string>(config).Build())
                 {
                     var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
                     consumer.Assign(topicPartition);
                     System.Threading.Thread.Sleep(300);
                     consumer.Consume(TimeSpan.Zero); // Activate assignment
                     System.Threading.Thread.Sleep(300);
-                    var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
+                    var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(1));
                     if (endOffsets.High <= endOffsets.Low) // No messages
                         return messages;
                     long start = Math.Max(endOffsets.High - count, endOffsets.Low);
@@ -126,7 +128,7 @@ namespace KafkaTool
                         if (cr.Offset >= endOffsets.High) break;
                         var msg = new KafkaMessage {
                             Offset = cr.Offset.Value,
-                            Key = "", // Key is Ignore type
+                            Key = (cr.Message.Key!=null?cr.Message.Key.ToString():""), // Key is Ignore type
                             Value = cr.Message.Value ?? string.Empty,
                             Headers = cr.Message.Headers?.Select(h => (h.Key, System.Text.Encoding.UTF8.GetString(h.GetValueBytes()))).ToList() ?? new List<(string, string)>()
                         };
@@ -141,14 +143,18 @@ namespace KafkaTool
 
         public Task<List<KafkaMessage>> GetMessagesBetweenOffsetsAsync(string brokerUrls, string topic, int partition, long fromOffset, long toOffset)
         {
+            // Default partition to 0 if invalid
+            if (partition < 0) partition = 0;
             return Task.Run(() => {
                 var config = new Confluent.Kafka.ConsumerConfig
                 {
                     BootstrapServers = brokerUrls,
-                    GroupId = $"KafkaTool-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+                    //add logged in windows user or session id to group id to avoid conflicts   
+                     
+                    GroupId = $"KafkaTool-{ Environment.UserName + "-" + Environment.MachineName}",
                 };
                 var messages = new List<KafkaMessage>();
-                using (var consumer = new Confluent.Kafka.ConsumerBuilder<Ignore, string>(config).Build())
+                using (var consumer = new Confluent.Kafka.ConsumerBuilder<string, string>(config).Build())
                 {
                     var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
                     consumer.Assign(topicPartition);
@@ -157,7 +163,7 @@ namespace KafkaTool
                     consumer.Consume(TimeSpan.Zero); // Activate assignment
                                         System.Threading.Thread.Sleep(500);
 
-                    var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
+                    var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(1));
                     if (endOffsets.High <= endOffsets.Low) return messages;
                     long start = Math.Max(fromOffset, endOffsets.Low);
                     long end = Math.Min(toOffset, endOffsets.High - 1);
@@ -175,7 +181,7 @@ namespace KafkaTool
                         var msg = new KafkaMessage
                         {
                             Offset = cr.Offset.Value,
-                            Key = "", // Key is Ignore type
+                            Key = (cr.Message.Key!=null?cr.Message.Key.ToString():""), // Key is Ignore type
                             Value = cr.Message.Value ?? string.Empty,
                             Headers = cr.Message.Headers?.Select(h => (h.Key, System.Text.Encoding.UTF8.GetString(h.GetValueBytes()))).ToList() ?? new List<(string, string)>()
                         };
@@ -230,6 +236,8 @@ namespace KafkaTool
 
         public async Task ProduceMessageAsync(string brokerUrls, string topic, string key, string value, List<(string, string)> headers, int partition)
         {
+            // Default partition to 0 if invalid
+            if (partition < 0) partition = 0;
             var config = new Confluent.Kafka.ProducerConfig { BootstrapServers = brokerUrls };
             using (var producer = new Confluent.Kafka.ProducerBuilder<string, string>(config).Build())
             {
