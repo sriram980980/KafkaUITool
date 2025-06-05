@@ -109,14 +109,14 @@ namespace KafkaTool
                     System.Threading.Thread.Sleep(300);
                     consumer.Consume(TimeSpan.Zero); // Activate assignment
                     var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
-                    //sleep to ensure offsets are available
-                    System.Threading.Thread.Sleep(300);
+                    System.Threading.Thread.Sleep(500);
                     if (endOffsets.High <= endOffsets.Low) // No messages
                         return messages;
                     long start = Math.Max(endOffsets.High - count, endOffsets.Low);
-                    
+                    if (start < endOffsets.Low) start = endOffsets.Low;
+                    if (start < 0) start = 0;
                     consumer.Seek(new Confluent.Kafka.TopicPartitionOffset(topicPartition, start));
-                    System.Threading.Thread.Sleep(300);
+                    System.Threading.Thread.Sleep(500);
                     int fetched = 0;
                     while (fetched < count)
                     {
@@ -151,24 +151,24 @@ namespace KafkaTool
                 using (var consumer = new Confluent.Kafka.ConsumerBuilder<Ignore, string>(config).Build())
                 {
                     var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
-                    
                     consumer.Assign(topicPartition);
-                    System.Threading.Thread.Sleep(300);
+                    System.Threading.Thread.Sleep(500);
                     consumer.Consume(TimeSpan.Zero); // Activate assignment
-                    System.Threading.Thread.Sleep(300);
                     var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
-                    if (endOffsets.High <= endOffsets.Low || fromOffset > toOffset || fromOffset >= endOffsets.High)
-                        return messages;
+                    if (endOffsets.High <= endOffsets.Low) return messages;
                     long start = Math.Max(fromOffset, endOffsets.Low);
                     long end = Math.Min(toOffset, endOffsets.High - 1);
+                    if (start < endOffsets.Low) start = endOffsets.Low;
+                    if (end < start) return messages;
+                    if (start < 0) start = 0;
                     consumer.Seek(new Confluent.Kafka.TopicPartitionOffset(topicPartition, start));
-                    System.Threading.Thread.Sleep(300);
+                    System.Threading.Thread.Sleep(500);
                     while (true)
                     {
                         var cr = consumer.Consume(TimeSpan.FromMilliseconds(1000));
                         if (cr == null) break;
                         if (cr.Offset < start) continue;
-                        if (cr.Offset > end) break;
+                        if (cr.Offset >= end) break;
                         var msg = new KafkaMessage
                         {
                             Offset = cr.Offset.Value,
