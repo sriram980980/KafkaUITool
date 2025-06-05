@@ -463,16 +463,18 @@ public partial class Form1 : Form
                 var numReplicas = new NumericUpDown() { Left = 120, Top = 100, Width = 60, Minimum = 1, Maximum = 10, Value = 1 };
                 var lblProps = new Label() { Left = 10, Top = 140, Text = "Topic Properties like  compression.type=producer (multi line)", Width = 120 };
                 var txtProps = new TextBox() {
+                     AcceptsReturn = true,
                     Left = 10, Top = 165, Width = 360, Height = 60,
                     Multiline = true, ScrollBars = ScrollBars.Vertical,
                     Text = string.Empty // No default value
                 };
-                // Prevent Enter key from submitting the form
                 txtProps.KeyDown += (sender2, e2) => {
-                    if (e2.KeyCode == Keys.Enter)
+                    if (e2.KeyCode == Keys.Enter && e2.Shift)
                     {
-                        e2.SuppressKeyPress = true; // Allow newline in textbox
-                        txtProps.AppendText(Environment.NewLine); // Add newline
+                        int selStart = txtProps.SelectionStart;
+                        txtProps.Text = txtProps.Text.Insert(selStart, Environment.NewLine);
+                        txtProps.SelectionStart = selStart + Environment.NewLine.Length;
+                        e2.SuppressKeyPress = true;
                     }
                 };
                 var btnOk = new Button() { Text = "Create", Left = 120, Width = 80, Top = 240, DialogResult = DialogResult.OK };
@@ -553,13 +555,31 @@ public partial class Form1 : Form
                 var numPartition = new NumericUpDown() { Left = 100, Top = 20, Width = 80, Minimum = 0, Maximum = partitions.Count > 0 ? partitions.Max() : 100, Value = partitions.Count > 0 ? partitions[0] : 0 };
                 // Headers
                 var lblHeaders = new Label() { Left = 10, Top = 60, Text = "Headers (key=value, one per line)", Width = 300 };
-                var txtHeaders = new TextBox() { Left = 10, Top = 85, Width = 460, Height = 60, Multiline = true, ScrollBars = ScrollBars.Vertical };
+                var txtHeaders = new TextBox() {  AcceptsReturn = true, Left = 10, Top = 85, Width = 460, Height = 60, Multiline = true, ScrollBars = ScrollBars.Vertical };
+                txtHeaders.KeyDown += (sender2, e2) => {
+                    if (e2.KeyCode == Keys.Enter && e2.Shift)
+                    {
+                        int selStart = txtHeaders.SelectionStart;
+                        txtHeaders.Text = txtHeaders.Text.Insert(selStart, Environment.NewLine);
+                        txtHeaders.SelectionStart = selStart + Environment.NewLine.Length;
+                        e2.SuppressKeyPress = true;
+                    }
+                };
                 // Key
                 var lblKey = new Label() { Left = 10, Top = 160, Text = "Key", Width = 60 };
                 var txtKey = new TextBox() { Left = 80, Top = 160, Width = 390 };
                 // Value
                 var lblValue = new Label() { Left = 10, Top = 200, Text = "Value", Width = 60 };
-                var txtValue = new TextBox() { Left = 80, Top = 200, Width = 390, Height = 80, Multiline = true, ScrollBars = ScrollBars.Vertical };
+                var txtValue = new TextBox() { Left = 80, Top = 200, Width = 390, Height = 80, Multiline = true, AcceptsReturn = true, ScrollBars = ScrollBars.Vertical };
+                txtValue.KeyDown += (sender2, e2) => {
+                    if (e2.KeyCode == Keys.Enter && e2.Shift)
+                    {
+                        int selStart = txtValue.SelectionStart;
+                        txtValue.Text = txtValue.Text.Insert(selStart, Environment.NewLine);
+                        txtValue.SelectionStart = selStart + Environment.NewLine.Length;
+                        e2.SuppressKeyPress = true;
+                    }
+                };
                 // Buttons
                 var btnOk = new Button() { Text = "Produce", Left = 280, Width = 80, Top = 350, DialogResult = DialogResult.OK };
                 var btnCancel = new Button() { Text = "Cancel", Left = 370, Width = 80, Top = 350, DialogResult = DialogResult.Cancel };
@@ -658,9 +678,18 @@ public partial class Form1 : Form
                 var txtProps = new TextBox() {
                     Left = 10, Top = 50, Width = 360, Height = 80,
                     Multiline = true, ScrollBars = ScrollBars.Vertical,
+                    AcceptsReturn = true, AcceptsTab = true,
                     Text = currentConfig != null ? string.Join("\r\n", currentConfig.Select(kv => $"{kv.Key}={kv.Value}")) : string.Empty
                 };
-                // try { NativeMethods.SetCueBanner(txtProps, "compression.type=producer"); } catch { }
+                txtProps.KeyDown += (sender2, e2) => {
+                    if (e2.KeyCode == Keys.Enter && e2.Shift)
+                    {
+                        int selStart = txtProps.SelectionStart;
+                        txtProps.Text = txtProps.Text.Insert(selStart, Environment.NewLine);
+                        txtProps.SelectionStart = selStart + Environment.NewLine.Length;
+                        e2.SuppressKeyPress = true;
+                    }
+                };
                 var btnOk = new Button() { Text = "Save", Left = 120, Width = 80, Top = 150, DialogResult = DialogResult.OK };
                 var btnCancel = new Button() { Text = "Cancel", Left = 210, Width = 80, Top = 150, DialogResult = DialogResult.Cancel };
                 prompt.Controls.Add(lblProps);
