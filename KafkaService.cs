@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 
 namespace KafkaTool
 {
-    public class KafkaService
+    public class KafkaService : IKafkaService
     {
         // Simulate a real connection to a Kafka cluster
         public Task<bool> ConnectAsync(string brokerUrls)
@@ -98,23 +99,31 @@ namespace KafkaTool
                 var config = new Confluent.Kafka.ConsumerConfig
                 {
                     BootstrapServers = brokerUrls,
-                    GroupId = $"KafkaTool-Preview-{Guid.NewGuid()}"
+                    GroupId = $"KafkaTool-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
                 };
                 var messages = new List<string>();
                 using (var consumer = new Confluent.Kafka.ConsumerBuilder<Ignore, string>(config).Build())
                 {
-                    consumer.Assign(new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition)));
-                    consumer.Consume(TimeSpan.Zero); // Workaround: activate assignment
-                    var endOffsets = consumer.QueryWatermarkOffsets(new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition)), TimeSpan.FromSeconds(5));
+                    var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
+                    consumer.Assign(topicPartition);
+                    consumer.Consume(TimeSpan.Zero); // Activate assignment
+                    var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
+                    if (endOffsets.High <= endOffsets.Low) // No messages
+                        return messages;
                     long start = Math.Max(endOffsets.High - count, endOffsets.Low);
-                    consumer.Seek(new Confluent.Kafka.TopicPartitionOffset(topic, new Confluent.Kafka.Partition(partition), start));
+                    consumer.Seek(new Confluent.Kafka.TopicPartitionOffset(topicPartition, start));
                     int fetched = 0;
                     while (fetched < count)
                     {
-                        var cr = consumer.Consume(TimeSpan.FromMilliseconds(500));
+                        var cr = consumer.Consume(TimeSpan.FromMilliseconds(1000));
                         if (cr == null) break;
-                        messages.Add($"Offset: {cr.Offset}\nKey: {cr.Message.Key}\nValue: {cr.Message.Value}");
+                        if (cr.Offset < start) continue;
+                        if (cr.Offset >= endOffsets.High) break;
+                        var key = ""; // Key is Ignore type
+                        var value = cr.Message.Value ?? string.Empty;
+                        messages.Add($"Offset: {cr.Offset}\nKey: {key}\nValue: {value}");
                         fetched++;
+                        if (cr.Offset == endOffsets.High - 1) break;
                     }
                 }
                 return messages;
@@ -127,20 +136,30 @@ namespace KafkaTool
                 var config = new Confluent.Kafka.ConsumerConfig
                 {
                     BootstrapServers = brokerUrls,
-                    GroupId = $"KafkaTool-Range-{Guid.NewGuid()}"
+                    GroupId = $"KafkaTool-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
                 };
                 var messages = new List<string>();
                 using (var consumer = new Confluent.Kafka.ConsumerBuilder<Ignore, string>(config).Build())
                 {
-                    consumer.Assign(new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition)));
-                    consumer.Consume(TimeSpan.Zero); // Workaround: activate assignment
-                    consumer.Seek(new Confluent.Kafka.TopicPartitionOffset(topic, new Confluent.Kafka.Partition(partition), fromOffset));
+                    var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
+                    consumer.Assign(topicPartition);
+                    consumer.Consume(TimeSpan.Zero); // Activate assignment
+                    var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
+                    if (endOffsets.High <= endOffsets.Low || fromOffset > toOffset || fromOffset >= endOffsets.High)
+                        return messages;
+                    long start = Math.Max(fromOffset, endOffsets.Low);
+                    long end = Math.Min(toOffset, endOffsets.High - 1);
+                    consumer.Seek(new Confluent.Kafka.TopicPartitionOffset(topicPartition, start));
                     while (true)
                     {
-                        var cr = consumer.Consume(TimeSpan.FromMilliseconds(500));
-                        if (cr == null || cr.Offset > toOffset) break;
-                        messages.Add($"Offset: {cr.Offset}\nKey: {cr.Message.Key}\nValue: {cr.Message.Value}");
-                        if (cr.Offset == toOffset) break;
+                        var cr = consumer.Consume(TimeSpan.FromMilliseconds(1000));
+                        if (cr == null) break;
+                        if (cr.Offset < start) continue;
+                        if (cr.Offset > end) break;
+                        var key = ""; // Key is Ignore type
+                        var value = cr.Message.Value ?? string.Empty;
+                        messages.Add($"Offset: {cr.Offset}\nKey: {key}\nValue: {value}");
+                        if (cr.Offset == end) break;
                     }
                 }
                 return messages;
@@ -162,6 +181,53 @@ namespace KafkaTool
                     return (offsets.Low.Value, offsets.High.Value);
                 }
             });
+        }
+
+        // Add method to get Kafka version
+        public Task<string> GetKafkaVersionAsync(string brokerUrls)
+        {
+            var config = new AdminClientConfig { BootstrapServers = brokerUrls };
+            using (var adminClient = new AdminClientBuilder(config).Build())
+            {
+                var meta = adminClient.GetMetadata(TimeSpan.FromSeconds(3));
+                var broker = meta.Brokers.FirstOrDefault();
+                if (broker != null)
+                {
+                    try
+                    {
+                        var handle = adminClient.Handle;
+                        var apiVersion = handle.GetType().GetProperty("ApiVersion")?.GetValue(handle)?.ToString();
+                        if (!string.IsNullOrEmpty(apiVersion))
+                            return Task.FromResult(apiVersion);
+                    }
+                    catch { }
+                    return Task.FromResult($"Broker {broker.BrokerId} {broker.Host}:{broker.Port}");
+                }
+                return Task.FromResult("Unknown");
+            }
+        }
+
+        public async Task ProduceMessageAsync(string brokerUrls, string topic, string key, string value, List<(string, string)> headers, int partition)
+        {
+            var config = new Confluent.Kafka.ProducerConfig { BootstrapServers = brokerUrls };
+            using (var producer = new Confluent.Kafka.ProducerBuilder<string, string>(config).Build())
+            {
+                var msg = new Confluent.Kafka.Message<string, string>
+                {
+                    Key = key,
+                    Value = value,
+                    Headers = new Confluent.Kafka.Headers()
+                };
+                if (headers != null)
+                {
+                    foreach (var (hKey, hVal) in headers)
+                    {
+                        msg.Headers.Add(hKey, Encoding.UTF8.GetBytes(hVal));
+                    }
+                }
+                var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
+                await producer.ProduceAsync(topicPartition, msg);
+            }
         }
     }
 }
