@@ -2,6 +2,8 @@
 
 A Windows Forms application for managing and interacting with Apache Kafka clusters.
 
+![KafkaTool UI Screenshot](./screenshot.png)
+
 ## Requirements (Detailed)
 - **.NET 9.0 SDK**: Install the latest .NET 9.0 SDK from the official Microsoft website.
 - **Windows OS**: Application is designed for Windows 10/11 (x64) with Windows Forms support.
@@ -22,15 +24,13 @@ A Windows Forms application for managing and interacting with Apache Kafka clust
 | 7    | Search messages by offset/ header value search (slow   operation)                   | ⬜ Pending  |
 | 8    | Search for message body  with partition + offset or time range --slowest operation  | ⬜ Pending  |
 
-## Work Progress (as of 2025-06-04)
-- Clusters are now persisted to `clusters.json` in the application directory. Each cluster has a `ConnectByDefault` flag.
-- When a cluster is connected, its `ConnectByDefault` is set to true (all others are set to false). On startup, the app auto-connects to the cluster with `ConnectByDefault: true`.
-- The previous `last_connected.txt` file is no longer used; all state is in `clusters.json`.
-- UI: Topic action buttons are properly aligned and sized, and the first topic tab is always visible.
-- All user actions and errors are logged to both the console and `KafkaTool.log`.
-- Topic management (create, edit, delete) is fully functional and error-free.
-- Cluster connection status is shown with color/icon in the cluster list.
-- Next steps: Implement consumer and broker management, advanced Kafka operations, and message viewing/search features.
+## Work Progress (as of 2025-06-05)
+- UI for topic/partition message viewing now uses a resizable SplitContainer: users can resize the message table and message preview area horizontally.
+- Message preview area always matches the table height and updates live as you select a row.
+- Fixed SplitContainer splitter errors for robust resizing and layout.
+- Shift+Enter now inserts a new line in all multiline textboxes (topic properties, headers, value, etc.), while Enter alone submits the form.
+- All previous features (cluster management, topic CRUD, logging, etc.) remain stable.
+- See screenshot above for the latest UI.
 
 ## Subtasks & Clear Requirements
 ### 1. Project Setup

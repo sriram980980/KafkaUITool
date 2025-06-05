@@ -821,6 +821,8 @@ public partial class Form1 : Form
             partitionsTab.Controls.Clear();
             partitionsTab.Controls.Add(table);
             // Declare these at the top of the partition tab setup so they are in scope everywhere
+            var rowHeaders = new Dictionary<int, string>();
+            List<KafkaMessage> lastMessages = new();
             var refreshPartitionsButton = new Button { Text = "Reload", Anchor = AnchorStyles.Left, Width = 140, Height = 28, Margin = new Padding(0, 0, 8, 0) };
             var partitionPanel = new FlowLayoutPanel {
                 Dock = DockStyle.Fill,
@@ -864,13 +866,37 @@ public partial class Form1 : Form
                 Multiline = true,
                 ReadOnly = true,
                 ScrollBars = ScrollBars.Both,
+                Margin= new Padding(30),
                 Dock = DockStyle.Fill,
                 Font = new Font("Consolas", 10),
-                WordWrap = false
+                WordWrap = true
             };
-            // Dictionary to store headers for each row
-            var rowHeaders = new Dictionary<int, string>();
-            List<KafkaMessage> lastMessages = new();
+            // Use SplitContainer for resizable table/preview
+            var splitContainer = new SplitContainer {
+                Orientation = Orientation.Vertical,
+                Dock = DockStyle.Fill,
+                Panel1MinSize = 100,
+                Panel2MinSize = 100,
+                FixedPanel = FixedPanel.None
+            };
+            splitContainer.Panel1.Controls.Add(messagesTable);
+            splitContainer.Panel2.Controls.Add(messageDetailsBox);
+            // Set SplitterDistance after layout to avoid InvalidOperationException
+            splitContainer.Layout += (s, e) => {
+                if (s is SplitContainer sc)
+                {
+                    int minTotal = sc.Panel1MinSize + sc.Panel2MinSize;
+                    if (sc.Width > minTotal)
+                    {
+                        int maxSplitter = sc.Width - sc.Panel2MinSize;
+                        int ideal = Math.Max(sc.Panel1MinSize, Math.Min(400, sc.Width / 2));
+                        if (ideal > maxSplitter) ideal = maxSplitter;
+                        if (ideal < sc.Panel1MinSize) ideal = sc.Panel1MinSize;
+                        if (sc.SplitterDistance != ideal)
+                            sc.SplitterDistance = ideal;
+                    }
+                }
+            };
             // TableLayoutPanel setup
             // Add a new column for details if not present
             if (table.ColumnCount < 3) {
@@ -893,10 +919,9 @@ public partial class Form1 : Form
             table.SetColumnSpan(offsetPanel, 2);
             table.Controls.Add(offsetPanel, 0, 3);
             // Row 4: Messages table and details box
-            // Place messagesTable in (0,4), span 2 columns, details box in (2,4)
-            table.Controls.Add(messagesTable, 0, 4);
-            table.SetColumnSpan(messagesTable, 2);
-            table.Controls.Add(messageDetailsBox, 2, 4);
+            // Place splitContainer in (0,4), span 2 columns
+            table.Controls.Add(splitContainer, 0, 4);
+            table.SetColumnSpan(splitContainer, 3);
             // Update message details box on row select or cell click
             void ShowMessageDetails(DataGridViewRow row)
             {
@@ -945,7 +970,7 @@ public partial class Form1 : Form
                             try {
                                 (long low, long high) = await kafkaService.GetPartitionDepthAsync(cluster.BrokerUrls, selectedTab.Text, partition);
                                 lblDepth.Text = $"Earliest: {low}, Latest: {high - 1}";
-                                numFrom.Value = low;
+                                numFrom.Value = Math.Max(high - 10, 0);
                                 numTo.Value = high > 0 ? high - 1 : 0;
                                 messagesTable.Rows.Clear();
                             } catch {

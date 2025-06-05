@@ -108,9 +108,9 @@ namespace KafkaTool
                 {
                     var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
                     consumer.Assign(topicPartition);
-                    System.Threading.Thread.Sleep(300);
+                    System.Threading.Thread.Sleep(500);
                     consumer.Consume(TimeSpan.Zero); // Activate assignment
-                    System.Threading.Thread.Sleep(300);
+                    System.Threading.Thread.Sleep(600);
                     var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(1));
                     if (endOffsets.High <= endOffsets.Low) // No messages
                         return messages;
