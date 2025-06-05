@@ -108,8 +108,8 @@ namespace KafkaTool
                     consumer.Assign(topicPartition);
                     System.Threading.Thread.Sleep(300);
                     consumer.Consume(TimeSpan.Zero); // Activate assignment
+                    System.Threading.Thread.Sleep(300);
                     var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
-                    System.Threading.Thread.Sleep(500);
                     if (endOffsets.High <= endOffsets.Low) // No messages
                         return messages;
                     long start = Math.Max(endOffsets.High - count, endOffsets.Low);
@@ -153,7 +153,10 @@ namespace KafkaTool
                     var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
                     consumer.Assign(topicPartition);
                     System.Threading.Thread.Sleep(500);
+
                     consumer.Consume(TimeSpan.Zero); // Activate assignment
+                                        System.Threading.Thread.Sleep(500);
+
                     var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
                     if (endOffsets.High <= endOffsets.Low) return messages;
                     long start = Math.Max(fromOffset, endOffsets.Low);
