@@ -93,7 +93,7 @@ namespace KafkaTool
             });
         }
 
-        public Task<List<string>> GetLatestMessagesAsync(string brokerUrls, string topic, int partition, int count)
+        public Task<List<KafkaMessage>> GetLatestMessagesAsync(string brokerUrls, string topic, int partition, int count)
         {
             return Task.Run(() => {
                 var config = new Confluent.Kafka.ConsumerConfig
@@ -101,17 +101,22 @@ namespace KafkaTool
                     BootstrapServers = brokerUrls,
                     GroupId = $"KafkaTool-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
                 };
-                var messages = new List<string>();
+                var messages = new List<KafkaMessage>();
                 using (var consumer = new Confluent.Kafka.ConsumerBuilder<Ignore, string>(config).Build())
                 {
                     var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
                     consumer.Assign(topicPartition);
+                    System.Threading.Thread.Sleep(300);
                     consumer.Consume(TimeSpan.Zero); // Activate assignment
                     var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
+                    //sleep to ensure offsets are available
+                    System.Threading.Thread.Sleep(300);
                     if (endOffsets.High <= endOffsets.Low) // No messages
                         return messages;
                     long start = Math.Max(endOffsets.High - count, endOffsets.Low);
+                    
                     consumer.Seek(new Confluent.Kafka.TopicPartitionOffset(topicPartition, start));
+                    System.Threading.Thread.Sleep(300);
                     int fetched = 0;
                     while (fetched < count)
                     {
@@ -119,9 +124,13 @@ namespace KafkaTool
                         if (cr == null) break;
                         if (cr.Offset < start) continue;
                         if (cr.Offset >= endOffsets.High) break;
-                        var key = ""; // Key is Ignore type
-                        var value = cr.Message.Value ?? string.Empty;
-                        messages.Add($"Offset: {cr.Offset}\nKey: {key}\nValue: {value}");
+                        var msg = new KafkaMessage {
+                            Offset = cr.Offset.Value,
+                            Key = "", // Key is Ignore type
+                            Value = cr.Message.Value ?? string.Empty,
+                            Headers = cr.Message.Headers?.Select(h => (h.Key, System.Text.Encoding.UTF8.GetString(h.GetValueBytes()))).ToList() ?? new List<(string, string)>()
+                        };
+                        messages.Add(msg);
                         fetched++;
                         if (cr.Offset == endOffsets.High - 1) break;
                     }
@@ -130,7 +139,7 @@ namespace KafkaTool
             });
         }
 
-        public Task<List<string>> GetMessagesBetweenOffsetsAsync(string brokerUrls, string topic, int partition, long fromOffset, long toOffset)
+        public Task<List<KafkaMessage>> GetMessagesBetweenOffsetsAsync(string brokerUrls, string topic, int partition, long fromOffset, long toOffset)
         {
             return Task.Run(() => {
                 var config = new Confluent.Kafka.ConsumerConfig
@@ -138,27 +147,36 @@ namespace KafkaTool
                     BootstrapServers = brokerUrls,
                     GroupId = $"KafkaTool-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
                 };
-                var messages = new List<string>();
+                var messages = new List<KafkaMessage>();
                 using (var consumer = new Confluent.Kafka.ConsumerBuilder<Ignore, string>(config).Build())
                 {
                     var topicPartition = new Confluent.Kafka.TopicPartition(topic, new Confluent.Kafka.Partition(partition));
+                    
                     consumer.Assign(topicPartition);
+                    System.Threading.Thread.Sleep(300);
                     consumer.Consume(TimeSpan.Zero); // Activate assignment
+                    System.Threading.Thread.Sleep(300);
                     var endOffsets = consumer.QueryWatermarkOffsets(topicPartition, TimeSpan.FromSeconds(5));
                     if (endOffsets.High <= endOffsets.Low || fromOffset > toOffset || fromOffset >= endOffsets.High)
                         return messages;
                     long start = Math.Max(fromOffset, endOffsets.Low);
                     long end = Math.Min(toOffset, endOffsets.High - 1);
                     consumer.Seek(new Confluent.Kafka.TopicPartitionOffset(topicPartition, start));
+                    System.Threading.Thread.Sleep(300);
                     while (true)
                     {
                         var cr = consumer.Consume(TimeSpan.FromMilliseconds(1000));
                         if (cr == null) break;
                         if (cr.Offset < start) continue;
                         if (cr.Offset > end) break;
-                        var key = ""; // Key is Ignore type
-                        var value = cr.Message.Value ?? string.Empty;
-                        messages.Add($"Offset: {cr.Offset}\nKey: {key}\nValue: {value}");
+                        var msg = new KafkaMessage
+                        {
+                            Offset = cr.Offset.Value,
+                            Key = "", // Key is Ignore type
+                            Value = cr.Message.Value ?? string.Empty,
+                            Headers = cr.Message.Headers?.Select(h => (h.Key, System.Text.Encoding.UTF8.GetString(h.GetValueBytes()))).ToList() ?? new List<(string, string)>()
+                        };
+                        messages.Add(msg);
                         if (cr.Offset == end) break;
                     }
                 }
@@ -229,5 +247,13 @@ namespace KafkaTool
                 await producer.ProduceAsync(topicPartition, msg);
             }
         }
+    }
+
+    public class KafkaMessage
+    {
+        public long Offset { get; set; }
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public List<(string, string)> Headers { get; set; } = new();
     }
 }

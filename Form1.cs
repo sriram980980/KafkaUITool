@@ -787,10 +787,18 @@ public partial class Form1 : Form
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 32)); // Partition selector
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 32)); // Depth label
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 40)); // Offset controls
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 180)); // Messages table
-            table.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Spacer
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 40)); // Messages table
+            table.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Spacer
             partitionsTab.Controls.Clear();
             partitionsTab.Controls.Add(table);
+            // Declare these at the top of the partition tab setup so they are in scope everywhere
+            var refreshPartitionsButton = new Button { Text = "Reload", Anchor = AnchorStyles.Left, Width = 140, Height = 28, Margin = new Padding(0, 0, 8, 0) };
+            var partitionPanel = new FlowLayoutPanel {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoSize = true,
+                WrapContents = false
+            };
             // Depth label
             var lblDepth = new Label { Text = "", Anchor = AnchorStyles.Left, AutoSize = true };
             // Offset controls
@@ -816,78 +824,71 @@ public partial class Form1 : Form
                 ReadOnly = true,
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells,
                 ColumnCount = 3
             };
             messagesTable.Columns[0].Name = "Offset";
             messagesTable.Columns[1].Name = "Key";
             messagesTable.Columns[2].Name = "Value";
-            // Partition selector as radio buttons
-            var refreshPartitionsButton = new Button { Text = "Reload", Anchor = AnchorStyles.Left, Width = 140, Height = 28, Margin = new Padding(0, 0, 8, 0) };
-            var partitionPanel = new FlowLayoutPanel {
+            // Message details textbox
+            var messageDetailsBox = new TextBox {
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Both,
                 Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.LeftToRight,
-                AutoSize = true,
-                WrapContents = false
+                Font = new Font("Consolas", 10),
+                WordWrap = false
             };
-            var partitionRadioButtons = new List<RadioButton>();
-            Func<Task> reloadPartitions = async () => {
-                try {
-                    var partitions = await kafkaService.GetPartitionsAsync(cluster.BrokerUrls, selectedTab.Text);
-                    partitionPanel.Controls.Clear();
-                    partitionRadioButtons.Clear();
-                    
-                    foreach (var p in partitions)
-                    {
-                        var rb = new RadioButton { Text = p.ToString(), Tag = p, AutoSize = true };
-                        partitionRadioButtons.Add(rb);
-                        partitionPanel.Controls.Add(rb);
-                    }
-                    lblDepth.Text = "";
-                    numFrom.Value = 0;
-                    numTo.Value = 0;
-                    messagesTable.Rows.Clear();
-                    // On radio button checked, show depth
-                    foreach (var rb in partitionRadioButtons)
-                    {
-                        rb.CheckedChanged += async (sender2, e2) =>
-                        {
-                            var radio = sender2 as RadioButton;
-                            if (radio != null && radio.Checked && radio.Tag is int partition)
-                            {
-                                try {
-                                    (long low, long high) = await kafkaService.GetPartitionDepthAsync(cluster.BrokerUrls, selectedTab.Text, partition);
-                                    lblDepth.Text = $"Earliest: {low}, Latest: {high - 1}";
-                                    numFrom.Value = low;
-                                    numTo.Value = high > 0 ? high - 1 : 0;
-                                    messagesTable.Rows.Clear();
-                                } catch {
-                                    lblDepth.Text = "Error loading partition info";
-                                    messagesTable.Rows.Clear();
-                                }
-                            }
-                        };
-                    }
-                } catch {
-                    lblDepth.Text = "Error loading partitions";
-                }
-            };
-            refreshPartitionsButton.Click += async (s2, e2) => await reloadPartitions();
-            table.Controls.Add(new Label { Text = "Partitions:", Anchor = AnchorStyles.Left, AutoSize = true }, 0, 0);
-            table.Controls.Add(refreshPartitionsButton, 0, 0);
-            table.Controls.Add(partitionPanel, 1, 1);
-            // Initial load
-            await reloadPartitions();
-            // Depth label
-            table.Controls.Add(lblDepth,2,1);
-            table.Controls.Add(new Label { Text = "Depth:", Anchor = AnchorStyles.Left, AutoSize = true }, 2, 1);
-
-            // Offset controls
+            // Dictionary to store headers for each row
+            var rowHeaders = new Dictionary<int, string>();
+            List<KafkaMessage> lastMessages = new();
+            // TableLayoutPanel setup
+            // Add a new column for details if not present
+            if (table.ColumnCount < 3) {
+                table.ColumnCount = 3;
+                table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60)); // For details box
+            }
+            // Place controls in correct cells
+            // Row 0: Partitions label and refresh button
+            var partitionsLabel = new Label { Text = "Partitions:", Anchor = AnchorStyles.Left, AutoSize = true };
+            table.Controls.Add(partitionsLabel, 0, 0);
+            table.Controls.Add(refreshPartitionsButton, 1, 0);
+            // Row 1: Partition panel (span 2 columns)
+            table.SetColumnSpan(partitionPanel, 2);
+            table.Controls.Add(partitionPanel, 0, 1);
+            // Row 2: Depth label and value
+            var lblDepthLabel = new Label { Text = "Depth:", Anchor = AnchorStyles.Left, AutoSize = true };
+            table.Controls.Add(lblDepthLabel, 0, 2);
+            table.Controls.Add(lblDepth, 1, 2);
+            // Row 3: Offset controls (span 2 columns)
             table.SetColumnSpan(offsetPanel, 2);
-            table.Controls.Add(offsetPanel, 0, 2);
-            // Messages table
+            table.Controls.Add(offsetPanel, 0, 3);
+            // Row 4: Messages table and details box
+            // Place messagesTable in (0,4), span 2 columns, details box in (2,4)
+            table.Controls.Add(messagesTable, 0, 4);
             table.SetColumnSpan(messagesTable, 2);
-            table.Controls.Add(messagesTable, 0, 3);
+            table.Controls.Add(messageDetailsBox, 2, 4);
+            // Update message details box on row select or cell click
+            void ShowMessageDetails(DataGridViewRow row)
+            {
+                string offset = row.Cells[0].Value?.ToString() ?? "";
+                string key = row.Cells[1].Value?.ToString() ?? "";
+                string value = row.Cells[2].Value?.ToString() ?? "";
+                int idx = row.Index;
+                string headers = rowHeaders.ContainsKey(idx) && !string.IsNullOrWhiteSpace(rowHeaders[idx]) ? $"Headers: {rowHeaders[idx]}\r\n" : "";
+                var details = $"{headers}Offset: {offset}\r\nKey: {key}\r\nValue: {value}";
+                messageDetailsBox.Text = details;
+            }
+            messagesTable.SelectionChanged += (s, e) => {
+                if (messagesTable.SelectedRows.Count > 0)
+                    ShowMessageDetails(messagesTable.SelectedRows[0]);
+                else
+                    messageDetailsBox.Text = string.Empty;
+            };
+            messagesTable.CellClick += (s, e) => {
+                if (e.RowIndex >= 0 && e.RowIndex < messagesTable.Rows.Count)
+                    ShowMessageDetails(messagesTable.Rows[e.RowIndex]);
+            };
             // Load partitions (but do not select any by default)
             try {
                 var partitions = await kafkaService.GetPartitionsAsync(cluster.BrokerUrls, selectedTab.Text);
@@ -942,16 +943,16 @@ public partial class Form1 : Form
                         return;
                     }
                     try {
-                        var messages = await kafkaService.GetMessagesBetweenOffsetsAsync(cluster.BrokerUrls, selectedTab.Text, partition, fromOffset, toOffset);
                         messagesTable.Rows.Clear();
-                        foreach (var msg in messages)
+                        rowHeaders.Clear();
+                        int rowIdx = 0;
+                        lastMessages = await kafkaService.GetMessagesBetweenOffsetsAsync(cluster.BrokerUrls, selectedTab.Text, partition, fromOffset, toOffset);
+                        foreach (var msg in lastMessages)
                         {
-                            // msg is formatted as "Offset: {offset}\nKey: {key}\nValue: {value}"
-                            var lines = msg.Split('\n');
-                            string offset = lines.Length > 0 ? lines[0].Replace("Offset: ", "") : "";
-                            string key = lines.Length > 1 ? lines[1].Replace("Key: ", "") : "";
-                            string value = lines.Length > 2 ? lines[2].Replace("Value: ", "") : "";
-                            messagesTable.Rows.Add(offset, key, value);
+                            messagesTable.Rows.Add(msg.Offset, msg.Key, msg.Value);
+                            rowHeaders[rowIdx] = msg.Headers != null && msg.Headers.Count > 0
+                                ? string.Join(", ", msg.Headers.Select(h => $"{h.Item1}={h.Item2}")) : "";
+                            rowIdx++;
                         }
                     } catch (Exception ex) {
                         MessageBox.Show($"Error fetching messages: {ex.Message}");
