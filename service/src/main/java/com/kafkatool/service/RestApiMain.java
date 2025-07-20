@@ -60,7 +60,7 @@ public class RestApiMain {
             
             // Add shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                logger.info("Shutting down REST API Server...");
+                logger.info("Shutting down REST API Server");
                 if (app != null) {
                     app.stop();
                 }

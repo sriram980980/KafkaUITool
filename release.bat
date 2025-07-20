@@ -31,7 +31,7 @@ if not exist "pom.xml" (
 )
 
 echo.
-echo Step 1: Building JAR with dependencies...
+echo Step 1: Building JAR with dependencies
 call mvnw.cmd clean package
 if %errorlevel% neq 0 (
     echo ERROR: Maven build failed
@@ -47,12 +47,12 @@ if not exist "target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar" (
 )
 
 echo.
-echo Step 2: Creating release directory...
+echo Step 2: Creating release directory
 if exist "..\release" rmdir /s /q "..\release"
 mkdir "..\release"
 
 echo.
-echo Step 3: Creating Windows executable with embedded JRE using jpackage...
+echo Step 3: Creating Windows executable with embedded JRE using jpackage
 jpackage ^
     --input target ^
     --name "KafkaUITool" ^
@@ -76,7 +76,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Step 4: Creating portable ZIP package...
+echo Step 4: Creating portable ZIP package
 cd "..\release"
 if exist "KafkaUITool-2.0.0.zip" del "KafkaUITool-2.0.0.zip"
 
@@ -84,7 +84,7 @@ REM Create a portable package with the JAR
 mkdir "KafkaUITool-2.0.0-portable"
 copy "..\kafka-ui-java\target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar" "KafkaUITool-2.0.0-portable\"
 echo @echo off > "KafkaUITool-2.0.0-portable\run.bat"
-echo echo Starting Kafka UI Tool... >> "KafkaUITool-2.0.0-portable\run.bat"
+echo echo Starting Kafka UI Tool >> "KafkaUITool-2.0.0-portable\run.bat"
 echo java -jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar >> "KafkaUITool-2.0.0-portable\run.bat"
 echo pause >> "KafkaUITool-2.0.0-portable\run.bat"
 

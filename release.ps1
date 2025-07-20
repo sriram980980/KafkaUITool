@@ -43,7 +43,7 @@ if (-not (Test-Path (Join-Path $javaProjectDir "pom.xml"))) {
 Set-Location $javaProjectDir
 
 Write-Host ""
-Write-Host "Step 1: Building JAR with dependencies..." -ForegroundColor Yellow
+Write-Host "Step 1: Building JAR with dependencies" -ForegroundColor Yellow
 & .\mvnw.cmd clean package
 if ($LASTEXITCODE -ne 0) {
     Write-Host "✗ ERROR: Maven build failed" -ForegroundColor Red
@@ -61,7 +61,7 @@ if (-not (Test-Path $jarFile)) {
 Write-Host "✓ JAR build successful" -ForegroundColor Green
 
 Write-Host ""
-Write-Host "Step 2: Creating release directory..." -ForegroundColor Yellow
+Write-Host "Step 2: Creating release directory" -ForegroundColor Yellow
 $releaseDir = Join-Path $scriptDir "release"
 if (Test-Path $releaseDir) {
     Remove-Item $releaseDir -Recurse -Force
@@ -70,7 +70,7 @@ New-Item -ItemType Directory -Path $releaseDir | Out-Null
 Write-Host "✓ Release directory created" -ForegroundColor Green
 
 Write-Host ""
-Write-Host "Step 3: Creating Windows executable with embedded JRE..." -ForegroundColor Yellow
+Write-Host "Step 3: Creating Windows executable with embedded JRE" -ForegroundColor Yellow
 
 # Create the jpackage command
 $jpackageArgs = @(
@@ -100,7 +100,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "✓ Windows executable created successfully" -ForegroundColor Green
 
 Write-Host ""
-Write-Host "Step 4: Creating portable ZIP package..." -ForegroundColor Yellow
+Write-Host "Step 4: Creating portable ZIP package" -ForegroundColor Yellow
 Set-Location $releaseDir
 
 $portableDir = "KafkaUITool-2.0.0-portable"
@@ -112,7 +112,7 @@ Copy-Item (Join-Path $javaProjectDir $jarFile) $portableDir
 # Create run.bat for portable version
 $runBatContent = @"
 @echo off
-echo Starting Kafka UI Tool...
+echo Starting Kafka UI Tool
 java -jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar
 pause
 "@

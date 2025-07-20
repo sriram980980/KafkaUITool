@@ -3,7 +3,7 @@ echo ========================================
 echo Kafka UI Tool - Build Scripts Test
 echo ========================================
 
-echo Testing build.bat functionality...
+echo Testing build.bat functionality
 echo.
 
 REM Test Java availability
@@ -33,7 +33,7 @@ echo PASS: Maven wrapper found
 
 REM Test if we can compile
 echo.
-echo Testing compilation...
+echo Testing compilation
 call mvnw.cmd clean compile -q
 if %errorlevel% neq 0 (
     echo FAIL: Compilation failed
@@ -43,7 +43,7 @@ echo PASS: Compilation successful
 
 REM Test if we can package
 echo.
-echo Testing packaging...
+echo Testing packaging
 call mvnw.cmd package -q -DskipTests
 if %errorlevel% neq 0 (
     echo FAIL: Packaging failed

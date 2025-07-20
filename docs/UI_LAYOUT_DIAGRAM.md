@@ -16,12 +16,12 @@
 │                                               │
 │ ┌─ Chat Section (TitledPane) - NEW ────────┐ │
 │ │  ┌─ Chat Messages (TextArea) ──────────┐ │ │
-│ │  │ [12:34:56] System: Connected...     │ │ │
+│ │  │ [12:34:56] System: Connected     │ │ │
 │ │  │ [12:35:01] You: Hello!              │ │ │
 │ │  │ [12:35:02] System: Message received │ │ │
 │ │  └──────────────────────────────────────┘ │ │
 │ │  ┌─ Input Row (HBox) ──────────────────┐ │ │
-│ │  │ [Type message...] [Send]             │ │ │
+│ │  │ [Type message] [Send]             │ │ │
 │ │  └──────────────────────────────────────┘ │ │
 │ │  ┌─ Control Row (HBox) ────────────────┐ │ │
 │ │  │              [Clear] [Connect]       │ │ │

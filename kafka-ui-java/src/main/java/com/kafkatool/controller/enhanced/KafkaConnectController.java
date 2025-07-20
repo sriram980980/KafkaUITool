@@ -90,7 +90,7 @@ public class KafkaConnectController {
             return;
         }
         
-        statusLabel.setText("Connecting...");
+        statusLabel.setText("Connecting");
         connectButton.setDisable(true);
         
         connectService.testConnectionAsync(url)
@@ -259,7 +259,7 @@ public class KafkaConnectController {
             String connectorName = config.get("name");
             config.remove("name"); // Remove name from config as it's passed separately
             
-            statusLabel.setText("Creating connector...");
+            statusLabel.setText("Creating connector");
             
             connectService.createOrUpdateConnectorAsync(url, connectorName, config)
                 .thenAccept(connectorInfo -> {

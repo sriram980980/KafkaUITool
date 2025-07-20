@@ -57,7 +57,7 @@ check_maven() {
 
 # Build the project
 build_project() {
-    print_info "Building Kafka UI Tool..."
+    print_info "Building Kafka UI Tool"
     cd "$PROJECT_DIR" || exit 1
     
     if ! mvn clean package -DskipTests; then
@@ -70,7 +70,7 @@ build_project() {
 
 # Run the application
 run_application() {
-    print_info "Starting Kafka UI Tool..."
+    print_info "Starting Kafka UI Tool"
     cd "$PROJECT_DIR" || exit 1
     
     # Try to run with JavaFX Maven plugin first
@@ -90,7 +90,7 @@ run_application() {
 
 # Clean build artifacts
 clean_project() {
-    print_info "Cleaning build artifacts..."
+    print_info "Cleaning build artifacts"
     cd "$PROJECT_DIR" || exit 1
     mvn clean
     print_info "Clean completed"
@@ -116,7 +116,7 @@ show_help() {
 
 # Run tests
 run_tests() {
-    print_info "Running tests..."
+    print_info "Running tests"
     cd "$PROJECT_DIR" || exit 1
     mvn test
 }

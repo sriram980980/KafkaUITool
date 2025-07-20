@@ -14,10 +14,10 @@ Due to the headless GitHub Actions environment, direct UI screenshots cannot be 
 ┌─ Chat ────────────────────────┐
 │ [Message display area]        │
 │ [2025-01-01 10:30:00] System: │
-│ Chat section initialized...   │
+│ Chat section initialized   │
 │                               │
 ├───────────────────────────────┤
-│ [Type your message...    ]    │
+│ [Type your message    ]    │
 │                        [Send] │
 ├───────────────────────────────┤
 │                [Clear][Connect]│

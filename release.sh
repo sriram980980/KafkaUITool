@@ -47,7 +47,7 @@ echo "✓ Service JAR: $SERVICE_JAR_NAME"
 
 # Test the service JAR
 echo ""
-echo "Testing service JAR..."
+echo "Testing service JAR"
 if timeout 3 java -jar "$SERVICE_JAR" --help >/dev/null 2>&1; then
     echo "✓ Service JAR is executable"
 else
@@ -63,13 +63,13 @@ echo "========================================"
 cat > "$RELEASE_DIR/start-service.sh" << 'EOF'
 #!/bin/bash
 # Start Kafka UI Tool Service
-echo "Starting Kafka UI Tool Service..."
+echo "Starting Kafka UI Tool Service"
 java -jar kafka-ui-service-*-jar-with-dependencies.jar "$@"
 EOF
 
 cat > "$RELEASE_DIR/start-service.bat" << 'EOF'
 @echo off
-echo Starting Kafka UI Tool Service...
+echo Starting Kafka UI Tool Service
 java -jar kafka-ui-service-2.0.0-jar-with-dependencies.jar %*
 EOF
 

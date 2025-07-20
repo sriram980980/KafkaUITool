@@ -213,7 +213,7 @@ if [ -r "$BASE_DIR/.mvn/wrapper/maven-wrapper.jar" ]; then
     fi
 else
     if [ "$MVNW_VERBOSE" = true ]; then
-      echo "Couldn't find .mvn/wrapper/maven-wrapper.jar, downloading it ..."
+      echo "Couldn't find .mvn/wrapper/maven-wrapper.jar, downloading it "
     fi
     if [ -n "$MVNW_REPOURL" ]; then
       jarUrl="$MVNW_REPOURL/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar"
@@ -234,7 +234,7 @@ else
 
     if command -v wget > /dev/null; then
         if [ "$MVNW_VERBOSE" = true ]; then
-          echo "Found wget ... using wget"
+          echo "Found wget  using wget"
         fi
         if [ -z "$MVNW_USERNAME" ] || [ -z "$MVNW_PASSWORD" ]; then
             wget "$jarUrl" -O "$wrapperJarPath" || rm -f "$wrapperJarPath"
@@ -243,7 +243,7 @@ else
         fi
     elif command -v curl > /dev/null; then
         if [ "$MVNW_VERBOSE" = true ]; then
-          echo "Found curl ... using curl"
+          echo "Found curl  using curl"
         fi
         if [ -z "$MVNW_USERNAME" ] || [ -z "$MVNW_PASSWORD" ]; then
             curl -o "$wrapperJarPath" "$jarUrl" -f
@@ -263,7 +263,7 @@ else
         if [ -e "$javaClass" ]; then
             if [ ! -e "$BASE_DIR/.mvn/wrapper/MavenWrapperDownloader.class" ]; then
                 if [ "$MVNW_VERBOSE" = true ]; then
-                  echo " - Compiling MavenWrapperDownloader.java ..."
+                  echo " - Compiling MavenWrapperDownloader.java "
                 fi
                 # Compiling the Java class
                 ("$JAVA_HOME/bin/javac" "$javaClass")
@@ -271,7 +271,7 @@ else
             if [ -e "$BASE_DIR/.mvn/wrapper/MavenWrapperDownloader.class" ]; then
                 # Running the downloader
                 if [ "$MVNW_VERBOSE" = true ]; then
-                  echo " - Running MavenWrapperDownloader.java ..."
+                  echo " - Running MavenWrapperDownloader.java "
                 fi
                 ("$JAVA_HOME/bin/java" -cp .mvn/wrapper MavenWrapperDownloader "$MAVEN_PROJECTBASEDIR")
             fi

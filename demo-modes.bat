@@ -23,19 +23,19 @@ set /p choice="Enter your choice (1-3): "
 
 if "%choice%"=="1" (
     echo.
-    echo Starting GUI mode...
+    echo Starting GUI mode
     echo Note: This requires JavaFX to be available
     echo.
     java -jar target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar
 ) else if "%choice%"=="2" (
     echo.
-    echo Starting API Server mode...
+    echo Starting API Server mode
     echo This mode runs without JavaFX requirements
     echo.
     java -jar target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar --api-server --port=8080
 ) else if "%choice%"=="3" (
     echo.
-    echo Showing help information...
+    echo Showing help information
     echo.
     java -jar target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar --help
 ) else (

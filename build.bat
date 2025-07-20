@@ -22,7 +22,7 @@ if not exist "pom.xml" (
 )
 
 echo.
-echo Step 1: Cleaning previous builds...
+echo Step 1: Cleaning previous builds
 call mvnw.cmd clean
 if %errorlevel% neq 0 (
     echo ERROR: Maven clean failed
@@ -31,7 +31,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Step 2: Compiling sources...
+echo Step 2: Compiling sources
 call mvnw.cmd compile
 if %errorlevel% neq 0 (
     echo ERROR: Maven compile failed
@@ -40,7 +40,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Step 3: Running tests...
+echo Step 3: Running tests
 call mvnw.cmd test
 if %errorlevel% neq 0 (
     echo ERROR: Tests failed
@@ -49,7 +49,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Step 4: Packaging JAR with dependencies...
+echo Step 4: Packaging JAR with dependencies
 call mvnw.cmd package
 if %errorlevel% neq 0 (
     echo ERROR: Maven package failed

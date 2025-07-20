@@ -23,7 +23,7 @@ if not exist "pom.xml" (
 
 REM Check if JAR exists, if not build it
 if not exist "target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar" (
-    echo JAR file not found. Building the project first...
+    echo JAR file not found. Building the project first
     call mvnw.cmd clean package
     if %errorlevel% neq 0 (
         echo ERROR: Build failed
@@ -33,7 +33,7 @@ if not exist "target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar" (
 )
 
 echo.
-echo Starting REST API Server...
+echo Starting REST API Server
 echo Default port: 8080
 echo.
 echo Available endpoints:

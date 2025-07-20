@@ -11,16 +11,16 @@
          <menus>
             <Menu mnemonicParsing="false" text="File">
                <items>
-                  <MenuItem fx:id="addClusterMenuItem" mnemonicParsing="false" onAction="#onAddCluster" text="Add Cluster..." />
+                  <MenuItem fx:id="addClusterMenuItem" mnemonicParsing="false" onAction="#onAddCluster" text="Add Cluster" />
                   <SeparatorMenuItem />
-                  <MenuItem fx:id="settingsMenuItem" mnemonicParsing="false" onAction="#onSettings" text="Settings..." />
+                  <MenuItem fx:id="settingsMenuItem" mnemonicParsing="false" onAction="#onSettings" text="Settings" />
                   <SeparatorMenuItem />
                   <MenuItem fx:id="exitMenuItem" mnemonicParsing="false" onAction="#onExit" text="Exit" />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="Topic">
                <items>
-                  <MenuItem fx:id="createTopicMenuItem" mnemonicParsing="false" onAction="#onCreateTopic" text="Create Topic..." />
+                  <MenuItem fx:id="createTopicMenuItem" mnemonicParsing="false" onAction="#onCreateTopic" text="Create Topic" />
                   <MenuItem fx:id="deleteTopicMenuItem" mnemonicParsing="false" onAction="#onDeleteTopic" text="Delete Topic" />
                   <SeparatorMenuItem />
                   <MenuItem fx:id="refreshTopicsMenuItem" mnemonicParsing="false" onAction="#onRefreshTopics" text="Refresh Topics" />
@@ -28,43 +28,43 @@
             </Menu>
             <Menu mnemonicParsing="false" text="Message">
                <items>
-                  <MenuItem fx:id="produceMessageMenuItem" mnemonicParsing="false" onAction="#onProduceMessage" text="Produce Message..." />
+                  <MenuItem fx:id="produceMessageMenuItem" mnemonicParsing="false" onAction="#onProduceMessage" text="Produce Message" />
                   <SeparatorMenuItem />
-                  <MenuItem fx:id="searchMessagesMenuItem" mnemonicParsing="false" onAction="#onSearchMessages" text="Search Messages..." />
+                  <MenuItem fx:id="searchMessagesMenuItem" mnemonicParsing="false" onAction="#onSearchMessages" text="Search Messages" />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="Admin">
                <items>
-                  <MenuItem fx:id="consumerGroupsMenuItem" mnemonicParsing="false" onAction="#onConsumerGroups" text="Consumer Groups..." />
-                  <MenuItem fx:id="brokersMenuItem" mnemonicParsing="false" onAction="#onBrokers" text="Brokers..." />
+                  <MenuItem fx:id="consumerGroupsMenuItem" mnemonicParsing="false" onAction="#onConsumerGroups" text="Consumer Groups" />
+                  <MenuItem fx:id="brokersMenuItem" mnemonicParsing="false" onAction="#onBrokers" text="Brokers" />
                   <SeparatorMenuItem />
-                  <MenuItem fx:id="clusterConfigMenuItem" mnemonicParsing="false" onAction="#onClusterConfig" text="Cluster Configuration..." />
-                  <MenuItem fx:id="brokerConfigMenuItem" mnemonicParsing="false" onAction="#onBrokerConfig" text="Broker Configuration..." />
+                  <MenuItem fx:id="clusterConfigMenuItem" mnemonicParsing="false" onAction="#onClusterConfig" text="Cluster Configuration" />
+                  <MenuItem fx:id="brokerConfigMenuItem" mnemonicParsing="false" onAction="#onBrokerConfig" text="Broker Configuration" />
                   <SeparatorMenuItem />
-                  <MenuItem fx:id="aclManagementMenuItem" mnemonicParsing="false" onAction="#onACLManagement" text="ACL Management..." />
-                  <MenuItem fx:id="multiClusterMenuItem" mnemonicParsing="false" onAction="#onMultiCluster" text="Multi-Cluster Management..." />
+                  <MenuItem fx:id="aclManagementMenuItem" mnemonicParsing="false" onAction="#onACLManagement" text="ACL Management" />
+                  <MenuItem fx:id="multiClusterMenuItem" mnemonicParsing="false" onAction="#onMultiCluster" text="Multi-Cluster Management" />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="Enterprise">
                <items>
-                  <MenuItem fx:id="schemaRegistryMenuItem" mnemonicParsing="false" onAction="#onSchemaRegistry" text="Schema Registry..." />
-                  <MenuItem fx:id="kafkaConnectMenuItem" mnemonicParsing="false" onAction="#onKafkaConnect" text="Kafka Connect..." />
-                  <MenuItem fx:id="metricsDashboardMenuItem" mnemonicParsing="false" onAction="#onMetricsDashboard" text="Metrics Dashboard..." />
+                  <MenuItem fx:id="schemaRegistryMenuItem" mnemonicParsing="false" onAction="#onSchemaRegistry" text="Schema Registry" />
+                  <MenuItem fx:id="kafkaConnectMenuItem" mnemonicParsing="false" onAction="#onKafkaConnect" text="Kafka Connect" />
+                  <MenuItem fx:id="metricsDashboardMenuItem" mnemonicParsing="false" onAction="#onMetricsDashboard" text="Metrics Dashboard" />
                   <SeparatorMenuItem />
-                  <MenuItem fx:id="importExportMenuItem" mnemonicParsing="false" onAction="#onImportExport" text="Import/Export Messages..." />
-                  <MenuItem fx:id="bulkOperationsMenuItem" mnemonicParsing="false" onAction="#onBulkOperations" text="Bulk Operations..." />
+                  <MenuItem fx:id="importExportMenuItem" mnemonicParsing="false" onAction="#onImportExport" text="Import/Export Messages" />
+                  <MenuItem fx:id="bulkOperationsMenuItem" mnemonicParsing="false" onAction="#onBulkOperations" text="Bulk Operations" />
                   <SeparatorMenuItem />
-                  <MenuItem fx:id="alertsMenuItem" mnemonicParsing="false" onAction="#onAlerts" text="Monitoring Alerts..." />
-                  <MenuItem fx:id="workspaceMenuItem" mnemonicParsing="false" onAction="#onWorkspace" text="Workspace Management..." />
+                  <MenuItem fx:id="alertsMenuItem" mnemonicParsing="false" onAction="#onAlerts" text="Monitoring Alerts" />
+                  <MenuItem fx:id="workspaceMenuItem" mnemonicParsing="false" onAction="#onWorkspace" text="Workspace Management" />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="Tools">
                <items>
-                  <MenuItem fx:id="regexSearchMenuItem" mnemonicParsing="false" onAction="#onRegexSearch" text="Advanced Search..." />
-                  <MenuItem fx:id="messageReplayMenuItem" mnemonicParsing="false" onAction="#onMessageReplay" text="Message Replay..." />
+                  <MenuItem fx:id="regexSearchMenuItem" mnemonicParsing="false" onAction="#onRegexSearch" text="Advanced Search" />
+                  <MenuItem fx:id="messageReplayMenuItem" mnemonicParsing="false" onAction="#onMessageReplay" text="Message Replay" />
                   <SeparatorMenuItem />
                   <MenuItem fx:id="themeMenuItem" mnemonicParsing="false" onAction="#onToggleTheme" text="Toggle Theme" />
-                  <MenuItem fx:id="keyboardShortcutsMenuItem" mnemonicParsing="false" onAction="#onKeyboardShortcuts" text="Keyboard Shortcuts..." />
+                  <MenuItem fx:id="keyboardShortcutsMenuItem" mnemonicParsing="false" onAction="#onKeyboardShortcuts" text="Keyboard Shortcuts" />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="Help">
@@ -108,7 +108,7 @@
                            <children>
                               <HBox alignment="CENTER_LEFT" spacing="5">
                                  <children>
-                                    <TextField fx:id="topicFilterField" promptText="Filter topics..." styleClass="filter-field" HBox.hgrow="ALWAYS" />
+                                    <TextField fx:id="topicFilterField" promptText="Filter topics" styleClass="filter-field" HBox.hgrow="ALWAYS" />
                                     <Button fx:id="refreshTopicsButton" mnemonicParsing="false" onAction="#onRefreshTopics" text="⟳" styleClass="icon-button" />
                                  </children>
                               </HBox>
@@ -130,10 +130,10 @@
                      <content>
                         <VBox spacing="5">
                            <children>
-                              <TextArea fx:id="chatMessagesArea" editable="false" prefHeight="150" wrapText="true" styleClass="chat-messages" promptText="Chat messages will appear here..." />
+                              <TextArea fx:id="chatMessagesArea" editable="false" prefHeight="150" wrapText="true" styleClass="chat-messages" promptText="Chat messages will appear here" />
                               <HBox alignment="CENTER_LEFT" spacing="5">
                                  <children>
-                                    <TextField fx:id="chatInputField" promptText="Type your message..." styleClass="chat-input" HBox.hgrow="ALWAYS" />
+                                    <TextField fx:id="chatInputField" promptText="Type your message" styleClass="chat-input" HBox.hgrow="ALWAYS" />
                                     <Button fx:id="sendChatButton" mnemonicParsing="false" onAction="#onSendChatMessage" text="Send" styleClass="primary-button" />
                                  </children>
                               </HBox>

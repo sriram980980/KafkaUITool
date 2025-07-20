@@ -189,7 +189,7 @@ public class MessageExportImportUtil {
         int totalMessages = messages.size();
         int processedMessages = 0;
         
-        callback.onProgress(0, totalMessages, "Starting export...");
+        callback.onProgress(0, totalMessages, "Starting export");
         
         switch (format.toLowerCase()) {
             case "json":
@@ -213,7 +213,7 @@ public class MessageExportImportUtil {
      */
     public static List<KafkaMessage> importWithProgress(File inputFile, String format, 
                                                       ProgressCallback callback) throws IOException {
-        callback.onProgress(0, 100, "Starting import...");
+        callback.onProgress(0, 100, "Starting import");
         
         List<KafkaMessage> messages;
         

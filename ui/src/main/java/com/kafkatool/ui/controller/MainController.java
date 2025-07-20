@@ -261,7 +261,7 @@ public class MainController implements Initializable {
                 if (empty || value == null) {
                     setText(null);
                 } else {
-                    String displayValue = value.length() > 100 ? value.substring(0, 97) + "..." : value;
+                    String displayValue = value.length() > 100 ? value.substring(0, 97) + "" : value;
                     setText(displayValue);
                     setTooltip(new Tooltip(value));
                 }
@@ -415,7 +415,7 @@ public class MainController implements Initializable {
             connectionStatusLabel.getStyleClass().removeAll("connected", "connecting", "disconnected");
             if (isConnected) {
                 connectionStatusLabel.getStyleClass().add("connected");
-            } else if ("Connecting...".equals(status)) {
+            } else if ("Connecting".equals(status)) {
                 connectionStatusLabel.getStyleClass().add("connecting");
             } else {
                 connectionStatusLabel.getStyleClass().add("disconnected");
@@ -515,7 +515,7 @@ public class MainController implements Initializable {
     }
     
     private void connectToCluster(ClusterInfo cluster) {
-        updateConnectionStatus("Connecting...", false);
+        updateConnectionStatus("Connecting", false);
         showLoading(true);
         cluster.setStatus("Connecting");
         clustersListView.refresh();
@@ -634,7 +634,7 @@ public class MainController implements Initializable {
     private void refreshTopics() {
         if (currentCluster != null && "Connected".equals(currentCluster.getStatus())) {
             showLoading(true);
-            updateStatus("Refreshing topics...");
+            updateStatus("Refreshing topics");
             
             kafkaService.getTopicsAsync(currentCluster.getBrokerUrls())
                 .whenComplete((topicList, throwable) -> {
@@ -680,8 +680,8 @@ public class MainController implements Initializable {
             currentTopic.getName(),
             currentTopic.getPartitions(),
             currentTopic.getReplicationFactor(),
-            "Loading...", // Would be loaded from service
-            "Loading..."  // Would be loaded from service
+            "Loading", // Would be loaded from service
+            "Loading"  // Would be loaded from service
         );
         
         Label infoText = new Label(topicInfo);
@@ -697,7 +697,7 @@ public class MainController implements Initializable {
         
         // Search field for configurations
         TextField configSearchField = new TextField();
-        configSearchField.setPromptText("Search configuration properties...");
+        configSearchField.setPromptText("Search configuration properties");
         
         TableView<ClusterConfig> basicConfigTable = new TableView<>();
         TableColumn<ClusterConfig, String> configNameCol = new TableColumn<>("Property");
@@ -834,7 +834,7 @@ public class MainController implements Initializable {
         
         // Load configuration data
         showLoading(true);
-        updateStatus("Loading topic configuration...");
+        updateStatus("Loading topic configuration");
         
         kafkaService.getTopicConfigAsync(currentCluster.getBrokerUrls(), currentTopic.getName())
             .whenComplete((configMap, throwable) -> {
@@ -977,7 +977,7 @@ public class MainController implements Initializable {
                 int partition = partitionComboBox.getValue();
                 
                 showLoading(true);
-                updateStatus("Loading messages...");
+                updateStatus("Loading messages");
                 
                 kafkaService.getMessagesBetweenOffsetsAsync(
                     currentCluster.getBrokerUrls(),
@@ -1012,7 +1012,7 @@ public class MainController implements Initializable {
             int partition = partitionComboBox.getValue();
             
             showLoading(true);
-            updateStatus("Loading latest messages...");
+            updateStatus("Loading latest messages");
             
             kafkaService.getLatestMessagesAsync(
                 currentCluster.getBrokerUrls(),
@@ -1040,7 +1040,7 @@ public class MainController implements Initializable {
         if (currentTopic != null && currentCluster != null) {
             DialogHelper.showProduceMessageDialog(currentTopic.getName()).ifPresent(messageData -> {
                 showLoading(true);
-                updateStatus("Producing message...");
+                updateStatus("Producing message");
                 
                 kafkaService.produceMessageAsync(
                     currentCluster.getBrokerUrls(),
@@ -1149,7 +1149,7 @@ public class MainController implements Initializable {
         HBox filterBar = new HBox(10);
         filterBar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         TextField searchField = new TextField();
-        searchField.setPromptText("Search consumer groups...");
+        searchField.setPromptText("Search consumer groups");
         ComboBox<String> stateFilter = new ComboBox<>();
         stateFilter.getItems().addAll("All States", "Stable", "PreparingRebalance", "CompletingRebalance", "Dead", "Empty");
         stateFilter.setValue("All States");
@@ -1196,7 +1196,7 @@ public class MainController implements Initializable {
         
         // Consumer group details area
         TextArea detailsArea = new TextArea();
-        detailsArea.setPromptText("Select a consumer group to view details...");
+        detailsArea.setPromptText("Select a consumer group to view details");
         detailsArea.setPrefRowCount(6);
         detailsArea.setEditable(false);
         
@@ -1295,7 +1295,7 @@ public class MainController implements Initializable {
         // Value input (for specific offset/timestamp)
         HBox valueRow = new HBox(10);
         TextField valueField = new TextField();
-        valueField.setPromptText("Enter offset, timestamp, or duration...");
+        valueField.setPromptText("Enter offset, timestamp, or duration");
         valueField.setDisable(true);
         valueRow.getChildren().addAll(new Label("Value:"), valueField);
         
@@ -1389,7 +1389,7 @@ public class MainController implements Initializable {
         
         // Broker details area
         TextArea detailsArea = new TextArea();
-        detailsArea.setPromptText("Select a broker to view details...");
+        detailsArea.setPromptText("Select a broker to view details");
         detailsArea.setPrefRowCount(6);
         detailsArea.setEditable(false);
         
@@ -1460,7 +1460,7 @@ public class MainController implements Initializable {
         // Search and filter
         HBox filterBar = new HBox(10);
         TextField searchField = new TextField();
-        searchField.setPromptText("Search configuration properties...");
+        searchField.setPromptText("Search configuration properties");
         ComboBox<String> categoryFilter = new ComboBox<>();
         categoryFilter.getItems().addAll("All Categories", "Log", "Network", "Security", "Replication", "Metrics");
         categoryFilter.setValue("All Categories");
@@ -1917,9 +1917,9 @@ public class MainController implements Initializable {
         exportFormatCombo.setValue("JSON");
         
         TextField exportFileField = new TextField();
-        exportFileField.setPromptText("Select output file...");
+        exportFileField.setPromptText("Select output file");
         
-        Button browseExportButton = new Button("Browse...");
+        Button browseExportButton = new Button("Browse");
         Button exportButton = new Button("Export Messages");
         
         HBox exportFormatRow = new HBox(10);
@@ -1941,9 +1941,9 @@ public class MainController implements Initializable {
         importFormatCombo.setValue("JSON");
         
         TextField importFileField = new TextField();
-        importFileField.setPromptText("Select input file...");
+        importFileField.setPromptText("Select input file");
         
-        Button browseImportButton = new Button("Browse...");
+        Button browseImportButton = new Button("Browse");
         Button importButton = new Button("Import Messages");
         
         HBox importFormatRow = new HBox(10);
@@ -1995,7 +1995,7 @@ public class MainController implements Initializable {
         
         // Target selection
         TextArea targetArea = new TextArea();
-        targetArea.setPromptText("Enter topic names, one per line...");
+        targetArea.setPromptText("Enter topic names, one per line");
         targetArea.setPrefRowCount(8);
         
         Button executeButton = new Button("Execute Operation");
@@ -2124,7 +2124,7 @@ public class MainController implements Initializable {
         
         // Search pattern
         TextField regexField = new TextField();
-        regexField.setPromptText("Enter regex pattern...");
+        regexField.setPromptText("Enter regex pattern");
         
         // Search options
         CheckBox searchKeyBox = new CheckBox("Search in Key");
@@ -2146,7 +2146,7 @@ public class MainController implements Initializable {
         
         // Results area
         TextArea resultsArea = new TextArea();
-        resultsArea.setPromptText("Search results will appear here...");
+        resultsArea.setPromptText("Search results will appear here");
         resultsArea.setPrefRowCount(10);
         resultsArea.setEditable(false);
         
@@ -2158,7 +2158,7 @@ public class MainController implements Initializable {
             }
             
             updateStatus("Advanced regex search feature coming soon - enterprise version");
-            resultsArea.setText("Regex search results for pattern: " + pattern + "\n\nFeature coming soon...");
+            resultsArea.setText("Regex search results for pattern: " + pattern + "\n\nFeature coming soon");
         });
         
         content.getChildren().addAll(
@@ -2362,7 +2362,7 @@ public class MainController implements Initializable {
         }
         
         showLoading(true);
-        updateStatus("Saving topic configuration...");
+        updateStatus("Saving topic configuration");
         
         kafkaService.updateTopicConfigAsync(currentCluster.getBrokerUrls(), currentTopic.getName(), configUpdates)
             .whenComplete((result, throwable) -> {
@@ -2400,7 +2400,7 @@ public class MainController implements Initializable {
         if (!confirmed) return;
         
         showLoading(true);
-        updateStatus("Adding partitions to topic...");
+        updateStatus("Adding partitions to topic");
         
         // Use the proper partition addition method
         kafkaService.addPartitionsToTopicAsync(currentCluster.getBrokerUrls(), currentTopic.getName(), newPartitionCount)
@@ -2535,7 +2535,7 @@ public class MainController implements Initializable {
         valueField.setPromptText("Enter configuration value");
         
         TextArea descArea = new TextArea();
-        descArea.setPromptText("Optional description...");
+        descArea.setPromptText("Optional description");
         descArea.setPrefRowCount(2);
         descArea.setWrapText(true);
         
@@ -2599,7 +2599,7 @@ public class MainController implements Initializable {
         if (!confirmed) return;
         
         showLoading(true);
-        updateStatus(operationType + " offset reset...");
+        updateStatus(operationType + " offset reset");
         
         CompletableFuture<Void> resetFuture;
         
@@ -2651,7 +2651,7 @@ public class MainController implements Initializable {
         }
         
         showLoading(true);
-        updateStatus("Deleting consumer group...");
+        updateStatus("Deleting consumer group");
         
         kafkaService.deleteConsumerGroupAsync(currentCluster.getBrokerUrls(), groupId)
             .whenComplete((result, throwable) -> {
@@ -2692,7 +2692,7 @@ public class MainController implements Initializable {
         Label sourceLabel = new Label("Source: " + config.getSource());
         
         TextArea descArea = new TextArea();
-        descArea.setPromptText("Property description...");
+        descArea.setPromptText("Property description");
         descArea.setPrefRowCount(3);
         descArea.setEditable(false);
         descArea.setStyle("-fx-background-color: #f0f0f0;");
@@ -2735,7 +2735,7 @@ public class MainController implements Initializable {
         if (!confirmed) return;
         
         showLoading(true);
-        updateStatus("Updating broker configuration...");
+        updateStatus("Updating broker configuration");
         
         Map<String, String> configUpdate = new HashMap<>();
         configUpdate.put(propertyName, newValue);
@@ -2827,7 +2827,7 @@ public class MainController implements Initializable {
         if (!confirmed) return;
         
         showLoading(true);
-        updateStatus("Updating cluster configuration...");
+        updateStatus("Updating cluster configuration");
         
         Map<String, String> configUpdate = new HashMap<>();
         configUpdate.put(propertyName, newValue);
