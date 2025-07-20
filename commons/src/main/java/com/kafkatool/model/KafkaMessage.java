@@ -28,6 +28,17 @@ public class KafkaMessage {
         this.timestamp = LocalDateTime.now();
     }
     
+    // Constructor that matches what KafkaServiceImpl expects
+    public KafkaMessage(String topic, long offset, int partition, String key, String value, LocalDateTime timestamp, Map<String, String> headers) {
+        this.topic = topic;
+        this.offset = offset;
+        this.partition = partition;
+        this.key = key;
+        this.value = value;
+        this.timestamp = timestamp;
+        this.headers = headers;
+    }
+    
     // Getters and setters
     public String getTopic() {
         return topic;

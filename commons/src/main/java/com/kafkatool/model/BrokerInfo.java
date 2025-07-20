@@ -8,6 +8,7 @@ public class BrokerInfo {
     private String host;
     private int port;
     private String rack;
+    private boolean controller;
     
     public BrokerInfo() {}
     
@@ -29,4 +30,7 @@ public class BrokerInfo {
     
     public String getRack() { return rack; }
     public void setRack(String rack) { this.rack = rack; }
+    
+    public boolean isController() { return controller; }
+    public void setController(boolean controller) { this.controller = controller; }
 }

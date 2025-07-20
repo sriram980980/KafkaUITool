@@ -96,7 +96,7 @@ public class KafkaServiceImpl implements KafkaService {
                         topicInfo.setName(topicName);
                         topicInfo.setPartitions(description.partitions().size());
                         if (!description.partitions().isEmpty()) {
-                            topicInfo.setReplicationFactor(description.partitions().get(0).replicas().size());
+                        topicInfo.setReplicationFactor((short) description.partitions().get(0).replicas().size());
                         }
                         topics.add(topicInfo);
                     }

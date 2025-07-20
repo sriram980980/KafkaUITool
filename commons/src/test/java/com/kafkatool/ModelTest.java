@@ -18,7 +18,7 @@ public class ModelTest {
     @BeforeEach
     void setUp() {
         cluster = new ClusterInfo("test-cluster", "localhost:9092");
-        topic = new TopicInfo("test-topic", 3, 1);
+        topic = new TopicInfo("test-topic", 3, (short) 1);
     }
     
     @Test
@@ -68,11 +68,11 @@ public class ModelTest {
     
     @Test
     void testTopicEquality() {
-        TopicInfo topic2 = new TopicInfo("test-topic", 5, 2);
+        TopicInfo topic2 = new TopicInfo("test-topic", 5, (short) 2);
         assertEquals(topic, topic2); // Equal because name is the same
         assertEquals(topic.hashCode(), topic2.hashCode());
         
-        TopicInfo topic3 = new TopicInfo("different-topic", 3, 1);
+        TopicInfo topic3 = new TopicInfo("different-topic", 3, (short) 1);
         assertNotEquals(topic, topic3);
     }
 }
