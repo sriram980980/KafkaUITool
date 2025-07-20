@@ -1,118 +1,281 @@
-# KafkaTool  --built by COPILOT 
+# Kafka UI Tool v2.0 - Cross-Platform Java/JavaFX Edition
 
-A Windows Forms application for managing and interacting with Apache Kafka clusters.
+A modern, cross-platform Kafka management tool built with Java and JavaFX, featuring an elegant dark theme UI and robust architecture.
 
-![KafkaTool UI Screenshot](./screenshot.png)
+![Kafka UI Tool](./legacy-csharp/screenshot.png)
 
-## Requirements (Detailed)
-- **.NET 9.0 SDK**: Install the latest .NET 9.0 SDK from the official Microsoft website.
-- **Windows OS**: Application is designed for Windows 10/11 (x64) with Windows Forms support.
-- **Open Source Only**: All dependencies must be open source and non-proprietary.
-- **Kafka Integration**: Uses [Confluent.Kafka](https://github.com/confluentinc/confluent-kafka-dotnet) for Kafka client operations.
-- **JSON Handling**: Uses [Newtonsoft.Json](https://www.newtonsoft.com/json) for parsing and formatting JSON.
-- **Visual Studio or VS Code**: Recommended for development and debugging.
+## 🚀 New Java/JavaFX Implementation
 
-## Features & Progress
-| Step | Feature Description                                                                 | Status      |
-|------|-------------------------------------------------------------------------------------|-------------|
-| 1    | Create .NET 9.0 Project structure                                                   | ✅ Complete |
-| 2    | File menu: Add clusters (accept name and broker URLs)                               | ✅ Complete |
-| 3    | Display topics/partitions, add new, change config (retention, etc.)                 | ✅ Complete |
-| 4    | Display producers, onboard new                                                      | ⬜ Pending  |
-| 5    | Display consumers, show/set offsets                                                 | ⬜ Pending  |
-| 6    | Show messages in partition, display as ASCII/JSON/JSONPath                          | ⬜ Pending  |
-| 7    | Search messages by offset/ header value search (slow   operation)                   | ⬜ Pending  |
-| 8    | Search for message body  with partition + offset or time range --slowest operation  | ⬜ Pending  |
+The tool has been completely rewritten in Java using JavaFX for cross-platform compatibility and modern UI design.
+![alt text](image.png)
 
-## Work Progress (as of 2025-06-05)
-- UI for topic/partition message viewing now uses a resizable SplitContainer: users can resize the message table and message preview area horizontally.
-- Message preview area always matches the table height and updates live as you select a row.
-- Fixed SplitContainer splitter errors for robust resizing and layout.
-- Shift+Enter now inserts a new line in all multiline textboxes (topic properties, headers, value, etc.), while Enter alone submits the form.
-- All previous features (cluster management, topic CRUD, logging, etc.) remain stable.
-- See screenshot above for the latest UI.
+### Key Features
+- **Cross-Platform**: Runs on Windows, macOS, and Linux
+- **Modern UI**: JavaFX with elegant dark theme and CSS styling
+- **Robust Architecture**: MVC pattern with async operations and proper error handling
+- **Apache Kafka Integration**: Uses official Apache Kafka Java client
+- **Advanced Features**: Message search, filtering, export/import capabilities
+- **Persistent Settings**: Automatic saving of cluster configurations
 
-## Subtasks & Clear Requirements
-### 1. Project Setup
-- [x] Initialize .NET 9.0 Windows Forms project
-- [x] Add open source dependencies (Confluent.Kafka, Newtonsoft.Json)
-- [x] Add .gitignore and README
+## Requirements
+- **Java 17+**: OpenJDK or Oracle JDK 17 or higher
+- **Maven 3.6+**: For building the project (or use included Maven Wrapper)
+- **JavaFX 21**: Included as dependency
+- **Cross-Platform**: Works on Windows, macOS, and Linux
 
-### 2. Cluster Management
-- [x] Add File menu with "Add Cluster" option
-- [x] Prompt user for cluster name and broker URLs
-- [x] Store and display added clusters in the UI (with name and brokers)
-- [x] Allow editing/removing clusters
-- [x] Add option to save clusters (in-memory for now)
-- [x] Show cluster connection status (color/icon) and allow double-click to connect
-- [x] Log all user actions and errors to both console and a log file
+## 🎯 Features & Implementation Status
 
-### 3. Topic & Partition Management
-- [x] List topics for each cluster
-- [x] Show partitions for each topic
-- [x] Add new topic
-- [x] Change topic config (e.g., retention)
-- [ ] Filter topic if lot of topics to display 
+### ✅ Completed Features
+- **Project Architecture**: Maven-based Java project with MVC pattern
+- **Modern UI**: JavaFX with FXML and elegant dark theme CSS
+- **Cluster Management**: Add, edit, delete, and connect to Kafka clusters
+- **Topic Management**: List, create, delete, and configure topics
+- **Message Operations**: View messages, produce messages, search functionality
+- **Partition Support**: View partition information and load messages by offset range
+- **Settings Persistence**: Automatic saving of cluster configurations
+- **Error Handling**: Comprehensive error handling with user-friendly dialogs
+- **Logging**: Structured logging with file rotation
+- **Cross-Platform**: Tested build system for Windows, macOS, and Linux
 
-### 4. Producer Management
-- [ ] List producers for each cluster
-- [ ] Onboard (add) new producer
-- [ ] Filter Producers if lot of # to display 
+### 🚧 Advanced Features (Future Enhancements)
 
-### 5. Consumer Management
-- [ ] List consumers for each cluster
-- [ ] Show consumer offsets
-- [ ] Set/Reset consumer committed offsets
+#### 🏢 Enterprise Administration
+- **Consumer Group Management**: Monitor lag, reset offsets, view group details and member assignments
+- **Security & Authentication**: SASL/SCRAM, SSL/TLS, LDAP integration, and ACL management
+- **Multi-Cluster Management**: Manage multiple Kafka environments from a single interface
+- **User Permissions**: Role-based access control and audit logging
+- **Cluster Health Monitoring**: Real-time metrics, alerts, and performance dashboards
 
-### 6. Message Viewing & Search
-- [x] Show messages in a partition
-- [x] Display message in ASCII, JSON, or JSONPath format
-- [ ] Search messages by key or offset
-- [ ] Search message body (full text)
+#### 🔄 Schema & Data Management
+- **Schema Registry Integration**: Support for Avro, JSON Schema, and Protobuf with schema evolution
+- **Message Serialization**: Advanced deserializers for various data formats (Avro, Protobuf, etc.)
+- **Data Quality Checks**: Message validation and schema compatibility verification
+- **Schema Versioning**: Browse schema history and manage schema evolution policies
 
-## Build & Run Steps
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/sriram980980/KafkaUITool.git
-   cd KafkaUITool
+#### 📊 Advanced Message Operations
+- **Message Export/Import**: Bulk export to JSON/CSV/Avro and import from various formats
+- **Message Replay**: Replay messages from specific offsets or time ranges
+- **Bulk Message Operations**: Batch produce, delete, and modify operations
+- **Message Transformation**: Built-in data transformation and filtering capabilities
+- **Advanced Search**: Regex patterns, JQ queries, and full-text search across message content
+
+#### 🔌 Kafka Ecosystem Integration
+- **Kafka Connect Management**: Deploy, monitor, and manage connectors and tasks
+- **Kafka Streams Visualization**: Topology diagrams and stream processing monitoring
+- **KSQL/ksqlDB Integration**: Execute queries and manage streams/tables
+- **Mirror Maker Management**: Configure and monitor cross-cluster replication
+
+#### 📈 Monitoring & Analytics
+- **Real-time Streaming Dashboard**: Live message flow visualization and topic activity
+- **Performance Metrics**: Throughput, latency, and resource utilization monitoring
+- **Custom Alerting**: Configurable alerts for lag, errors, and performance thresholds
+- **Historical Analytics**: Long-term trend analysis and capacity planning tools
+- **Interactive Charts**: Drill-down capabilities for detailed performance analysis
+
+#### 🛠 Developer Experience
+- **Plugin System**: Extensible architecture for custom features and integrations
+- **REST API**: Programmatic access to tool functionality for automation
+- **CLI Interface**: Command-line tools for scripting and CI/CD integration
+- **Configuration Management**: Environment-specific configurations and deployment profiles
+- **Workspace Management**: Save and restore tool layouts and connection profiles
+
+#### 🎨 UI/UX Enhancements
+- **Custom Themes**: Light theme and customizable color schemes
+- **Advanced Layouts**: Tabbed interface, floating panels, and workspace customization
+- **Keyboard Shortcuts**: Power-user keyboard navigation and shortcuts
+- **Message Formatting**: Syntax highlighting for JSON, XML, and other formats
+- **Responsive Design**: Optimized layouts for different screen sizes and resolutions
+
+#### 🔒 Data Protection & Compliance
+- **Data Masking**: Configurable field masking for sensitive data
+- **Encryption Support**: End-to-end encryption for stored configurations and logs
+- **Compliance Tools**: GDPR-compliant data handling and retention policies
+- **Backup & Recovery**: Configuration backup and disaster recovery features
+
+## 🛠 Build & Run
+
+### Prerequisites
+1. **Install Java 17+**:
+   ```bash
+   # Ubuntu/Debian
+   sudo apt update && sudo apt install openjdk-17-jdk
+   
+   # macOS (using Homebrew)
+   brew install openjdk@17
+   
+   # Windows (using Chocolatey)
+   choco install openjdk17
    ```
-2. **Install .NET 9.0 SDK** (if not already installed):
-   - Download from https://dotnet.microsoft.com/download/dotnet/9.0
-3. **Restore dependencies:**
-   ```sh
-   dotnet restore
-   ```
-4. **Build the project:**
-   ```sh
-   dotnet build
-   ```
-5. **Run the application:**
-   ```sh
-   dotnet run --project KafkaTool/KafkaTool.csproj
-   ```
 
-## User Guide
-### Adding a Kafka Cluster
-- Go to the `File` menu and select `Add Cluster`.
-- Enter a name for the cluster and one or more broker URLs (comma separated, e.g., `localhost:9092,localhost:9093`).
-- Click OK. The cluster will be added and shown in the list.
+2. **Maven**: Choose one option:
+   - **Option A - Use Maven Wrapper (Recommended)**: No installation needed! The project includes Maven Wrapper
+   - **Option B - Install Maven 3.6+**:
+     ```bash
+     # Ubuntu/Debian
+     sudo apt install maven
+     
+     # macOS (using Homebrew) 
+     brew install maven
+     
+     # Windows (using Chocolatey)
+     choco install maven
+     ```
 
-### Editing or Removing a Cluster
-- Right-click a cluster in the list to edit its name or broker URLs, or to remove it.
-- Use the context menu's "Save Changes" to save the current in-memory list (future: persistent storage).
+### Build Instructions
 
-### Connecting to a Cluster
-- Double-click a cluster to attempt a connection. The status and icon will update to show connecting, connected, or failed.
-- While connecting, the cluster will show a yellow color and be temporarily unclickable.
-- Connection attempts and results are logged to both the console and a `KafkaTool.log` file in the app directory.
+#### Using Maven Wrapper (Recommended)
+The project includes Maven Wrapper, so you don't need to install Maven separately:
 
-### Next Steps
-- After adding clusters, you will be able to view topics, partitions, producers, consumers, and messages as features are implemented.
-- Use the menu options to manage Kafka resources and inspect messages.
+```bash
+# Clone the repository
+git clone https://github.com/sriram980980/KafkaUITool.git
+cd KafkaUITool/kafka-ui-java
 
-### Troubleshooting
-- Ensure your Kafka brokers are reachable from your machine.
-- If you encounter errors, check the application output and logs for details (see `KafkaTool.log`).
+# On Windows
+.\mvnw.cmd clean compile
+.\mvnw.cmd test
+.\mvnw.cmd clean package
+.\mvnw.cmd javafx:run
+
+# On macOS/Linux
+./mvnw clean compile
+./mvnw test  
+./mvnw clean package
+./mvnw javafx:run
+```
+
+#### Using Installed Maven
+If you have Maven installed:
+
+```bash
+# Clone the repository
+git clone https://github.com/sriram980980/KafkaUITool.git
+cd KafkaUITool/kafka-ui-java
+
+# Compile the project
+mvn clean compile
+
+# Run tests (when available)
+mvn test
+
+# Package the application
+mvn clean package
+
+# Run the application
+mvn javafx:run
+```
+
+### Running the JAR
+```bash
+# Build JAR with dependencies (using wrapper)
+.\mvnw.cmd clean package    # Windows
+./mvnw clean package       # macOS/Linux
+
+# Or with installed Maven
+mvn clean package
+
+# Run the standalone JAR
+java --module-path /path/to/javafx/lib --add-modules javafx.controls,javafx.fxml -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar
+```
+
+## 🎨 Architecture
+
+### Project Structure
+```
+kafka-ui-java/
+├── src/main/java/com/kafkatool/
+│   ├── KafkaUIApplication.java          # Main application class
+│   ├── controller/
+│   │   └── MainController.java          # Main UI controller (MVC)
+│   ├── model/
+│   │   ├── ClusterInfo.java            # Cluster data model
+│   │   ├── TopicInfo.java              # Topic data model
+│   │   └── KafkaMessage.java           # Message data model
+│   ├── service/
+│   │   ├── KafkaService.java           # Service interface
+│   │   └── KafkaServiceImpl.java       # Kafka operations implementation
+│   └── util/
+│       ├── DialogHelper.java           # UI dialog utilities
+│       ├── JsonFormatter.java          # JSON formatting utilities
+│       └── SettingsManager.java        # Settings persistence
+├── src/main/resources/
+│   ├── fxml/
+│   │   └── main.fxml                   # Main UI layout
+│   ├── css/
+│   │   └── application.css             # Dark theme stylesheet
+│   └── logback.xml                     # Logging configuration
+└── pom.xml                             # Maven project configuration
+```
+
+### Key Technologies
+- **JavaFX 21**: Modern UI framework with FXML and CSS
+- **Apache Kafka Client 3.6.1**: Official Kafka Java client
+- **Jackson 2.16.1**: JSON processing
+- **Logback 1.4.14**: Structured logging
+- **Maven**: Build system and dependency management
+
+## 📖 User Guide
+
+### Getting Started
+1. **Launch the Application**: Run the application using Maven or the standalone JAR
+2. **Add a Kafka Cluster**: Click "File" → "Add Cluster" or use the "Add" button in the clusters panel
+3. **Connect to Cluster**: Select a cluster and click "Connect" or double-click the cluster name
+4. **Explore Topics**: Once connected, topics will be automatically loaded in the left panel
+
+### Managing Clusters
+- **Add Cluster**: Provide cluster name and broker URLs (e.g., `localhost:9092`)
+- **Edit Cluster**: Right-click cluster or use "Edit" button to modify settings
+- **Connect/Disconnect**: Use "Connect" button or double-click cluster name
+- **Delete Cluster**: Select cluster and click "Delete" button
+
+### Topic Operations
+- **Filter Topics**: Use the search field to filter topics by name
+- **Create Topic**: Click "Create" button and specify partitions and replication factor
+- **View Topic Config**: Select topic and click "Config" to view topic settings
+- **Delete Topic**: Select topic and click "Delete" (use with caution!)
+
+### Message Operations
+- **Select Partition**: Choose partition from dropdown
+- **Load Messages**: Specify offset range and click "Load" or use "Load Latest"
+- **View Message Details**: Click on any message to see raw, JSON, and headers
+- **Produce Message**: Use "Message" → "Produce Message" to send new messages
+- **Search Messages**: Use "Message" → "Search Messages" for pattern-based search
+
+### Settings & Configuration
+- **Persistent Storage**: Cluster configurations are automatically saved
+- **Logging**: Application logs are saved to `~/.kafka-ui-tool/kafka-ui-tool.log`
+- **Theme**: Modern dark theme with elegant styling
+
+## 🔧 Troubleshooting
+
+### Common Issues
+1. **Connection Failed**: Verify Kafka broker URLs and network connectivity
+2. **Build Errors**: Ensure Java 17+ and Maven 3.6+ are installed
+3. **UI Issues**: Make sure JavaFX is properly installed for your platform
+
+### Platform-Specific Notes
+- **Linux**: May require additional JavaFX installation: `sudo apt install openjfx`
+- **macOS**: Works with both Intel and Apple Silicon Macs
+- **Windows**: Requires Java 17+ with JavaFX support
+
+## 🔄 Legacy C# Version
+
+The previous C# Windows Forms implementation has been moved to the `legacy-csharp/` directory. The Java/JavaFX version is now the primary implementation offering:
+- Cross-platform compatibility
+- Modern, responsive UI
+- Better architecture and maintainability
+- Enhanced error handling and logging
 
 ---
-For questions or contributions, please open an issue or pull request on GitHub.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
+
+## 📄 License
+
+This project is open source. See the repository for license details.
+
+---
+
+*Built with ❤️ using Java, JavaFX, and Apache Kafka*
