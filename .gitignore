@@ -20,16 +20,16 @@ Thumbs.db
 *.log
 
 # Java/Maven specific
-kafka-ui-java/target/
-kafka-ui-java/.idea/
-kafka-ui-java/*.iml
-kafka-ui-java/*.ipr
-kafka-ui-java/*.iws
+target/
+.idea/
+*.iml
+*.ipr
+*.iws
 
 # Maven Wrapper files (DO NOT IGNORE - these should be committed)
-# kafka-ui-java/mvnw
-# kafka-ui-java/mvnw.cmd
-# kafka-ui-java/.mvn/
+# mvnw
+# mvnw.cmd
+# .mvn/
 
 # Application logs
 .kafka-ui-tool/
