@@ -164,6 +164,7 @@
                         <TextField fx:id="toOffsetField" prefWidth="80" promptText="To" styleClass="offset-field" />
                         <Button fx:id="loadMessagesButton" mnemonicParsing="false" onAction="#onLoadMessages" text="Load" styleClass="primary-button" />
                         <Button fx:id="loadLatestButton" mnemonicParsing="false" onAction="#onLoadLatest" text="Load Latest" styleClass="action-button" />
+                        <Button fx:id="searchMessagesButton" mnemonicParsing="false" onAction="#onSearchMessages" text="🔍" styleClass="icon-button" tooltip="Advanced Search" />
                      </children>
                      <padding>
                         <Insets bottom="5" left="5" right="5" top="5" />

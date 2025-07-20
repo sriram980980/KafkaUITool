@@ -3,12 +3,20 @@ package com.kafkatool.controller.enhanced;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.Node;
+import javafx.geometry.Insets;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import com.kafkatool.model.*;
 import com.kafkatool.service.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Controller for Kafka Connect management
@@ -34,9 +42,10 @@ public class KafkaConnectController {
     @FXML private Label statusLabel;
     @FXML private Label clusterInfoLabel;
     
-    private KafkaConnectService connectService;
+    private KafkaConnectService connectService = new KafkaConnectServiceImpl();
     private ObservableList<ConnectorInfo> connectors = FXCollections.observableArrayList();
     private ConnectorInfo selectedConnector;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     
     public void initialize() {
         setupUI();
@@ -171,8 +180,103 @@ public class KafkaConnectController {
     }
     
     private void createNewConnector() {
-        // TODO: Implement connector creation dialog
-        showInfo("Connector creation dialog not implemented yet");
+        // Create connector configuration dialog
+        Dialog<Map<String, String>> dialog = new Dialog<>();
+        dialog.setTitle("Create New Connector");
+        dialog.setHeaderText("Configure New Kafka Connector");
+        
+        // Set button types
+        ButtonType createButtonType = new ButtonType("Create", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+        
+        // Create form
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        
+        TextField nameField = new TextField();
+        nameField.setPromptText("connector-name");
+        TextField classField = new TextField();
+        classField.setPromptText("org.apache.kafka.connect.file.FileStreamSourceConnector");
+        TextField tasksMaxField = new TextField("1");
+        TextArea configArea = new TextArea();
+        configArea.setPromptText("Additional configuration (JSON format):\n{\n  \"file\": \"/tmp/source.txt\",\n  \"topic\": \"my-topic\"\n}");
+        configArea.setPrefRowCount(8);
+        
+        grid.add(new Label("Connector Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Connector Class:"), 0, 1);
+        grid.add(classField, 1, 1);
+        grid.add(new Label("Max Tasks:"), 0, 2);
+        grid.add(tasksMaxField, 1, 2);
+        grid.add(new Label("Configuration:"), 0, 3);
+        grid.add(configArea, 1, 3);
+        
+        // Enable/disable create button
+        Node createButton = dialog.getDialogPane().lookupButton(createButtonType);
+        createButton.setDisable(true);
+        
+        nameField.textProperty().addListener((observable, oldValue, newValue) -> {
+            createButton.setDisable(newValue.trim().isEmpty() || classField.getText().trim().isEmpty());
+        });
+        classField.textProperty().addListener((observable, oldValue, newValue) -> {
+            createButton.setDisable(newValue.trim().isEmpty() || nameField.getText().trim().isEmpty());
+        });
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        // Convert result when Create button is pressed
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == createButtonType) {
+                Map<String, String> config = new HashMap<>();
+                config.put("name", nameField.getText().trim());
+                config.put("connector.class", classField.getText().trim());
+                config.put("tasks.max", tasksMaxField.getText().trim());
+                
+                // Parse additional configuration
+                String additionalConfig = configArea.getText().trim();
+                if (!additionalConfig.isEmpty()) {
+                    try {
+                        JsonNode configNode = objectMapper.readTree(additionalConfig);
+                        configNode.fields().forEachRemaining(entry -> {
+                            config.put(entry.getKey(), entry.getValue().asText());
+                        });
+                    } catch (Exception e) {
+                        showError("Invalid JSON configuration: " + e.getMessage());
+                        return null;
+                    }
+                }
+                
+                return config;
+            }
+            return null;
+        });
+        
+        // Show dialog and handle result
+        dialog.showAndWait().ifPresent(config -> {
+            String url = connectUrlField.getText().trim();
+            String connectorName = config.get("name");
+            config.remove("name"); // Remove name from config as it's passed separately
+            
+            statusLabel.setText("Creating connector...");
+            
+            connectService.createOrUpdateConnectorAsync(url, connectorName, config)
+                .thenAccept(connectorInfo -> {
+                    javafx.application.Platform.runLater(() -> {
+                        statusLabel.setText("Connected");
+                        showInfo("Connector '" + connectorName + "' created successfully");
+                        loadConnectors();
+                    });
+                })
+                .exceptionally(throwable -> {
+                    javafx.application.Platform.runLater(() -> {
+                        statusLabel.setText("Connected");
+                        showError("Failed to create connector: " + throwable.getMessage());
+                    });
+                    return null;
+                });
+        });
     }
     
     private void deleteSelectedConnector() {

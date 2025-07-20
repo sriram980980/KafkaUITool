@@ -109,6 +109,7 @@ public class MainController implements Initializable {
     @FXML private TextField toOffsetField;
     @FXML private Button loadMessagesButton;
     @FXML private Button loadLatestButton;
+    @FXML private Button searchMessagesButton;
     
     @FXML private TableView<KafkaMessage> messagesTableView;
     @FXML private TableColumn<KafkaMessage, Long> offsetColumn;
@@ -1071,33 +1072,10 @@ public class MainController implements Initializable {
     
     @FXML
     private void onSearchMessages() {
-        if (currentTopic != null && currentCluster != null && partitionComboBox.getValue() != null) {
-            DialogHelper.showSearchMessagesDialog().ifPresent(searchCriteria -> {
-                showLoading(true);
-                updateStatus("Searching messages...");
-                
-                kafkaService.searchMessagesAsync(
-                    currentCluster.getBrokerUrls(),
-                    currentTopic.getName(),
-                    partitionComboBox.getValue(),
-                    searchCriteria.getSearchPattern(),
-                    searchCriteria.isSearchInKey(),
-                    searchCriteria.isSearchInValue(),
-                    searchCriteria.getMaxResults()
-                ).whenComplete((messageList, throwable) -> {
-                    Platform.runLater(() -> {
-                        showLoading(false);
-                        if (throwable == null) {
-                            messages.setAll(messageList);
-                            updateStatus("Search completed: " + messageList.size() + " messages found");
-                        } else {
-                            updateStatus("Search failed: " + throwable.getMessage());
-                            DialogHelper.showErrorDialog("Search Error",
-                                "Failed to search messages", throwable.getMessage());
-                        }
-                    });
-                });
-            });
+        if (currentTopic != null && currentCluster != null) {
+            showRegexSearchDialog();
+        } else {
+            DialogHelper.showErrorDialog("No Topic Selected", "Selection Required", "Please select a topic first.");
         }
     }
     

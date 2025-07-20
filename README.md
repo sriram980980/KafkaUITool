@@ -1,11 +1,16 @@
 # Kafka UI Tool v2.0 - Cross-Platform Java/JavaFX Edition
+
+## ⚠️ **EXPERIMENTAL SOFTWARE DISCLAIMER**
+**This software is experimental and provided "AS IS" without any warranties or guarantees. Use at your own risk. The authors and contributors are not responsible for any data loss, system failures, or other damages that may occur from using this software. This tool is intended for development and testing purposes.**
+
 ## 🚀 New Java/JavaFX Implementation
 
 The tool has been completely rewritten in Java using JavaFX for cross-platform compatibility and modern UI design.
-![alt text](image.png)
-![alt text](image-1.png)
-![alt text](image-2.png)
-![alt text](image-3.png)
+
+![Main Interface](docs/image.png)
+![Cluster Management](docs/image-1.png)
+![Topic Operations](docs/image-2.png)
+![Message Viewer](docs/image-3.png)
 ### Key Features
 - **Cross-Platform**: Runs on Windows, macOS, and Linux
 - **Modern UI**: JavaFX with elegant dark theme and CSS styling
@@ -91,31 +96,93 @@ The tool has been completely rewritten in Java using JavaFX for cross-platform c
 
 ## 🛠 Build & Run
 
-### Quick Start (Windows)
-For Windows users, we provide automated build scripts:
+### 🚀 Quick Start Guide
 
+#### Option 1: Launch GUI Application (Recommended for Desktop Users)
+```bash
+# Clone the repository
+git clone https://github.com/sriram980980/KafkaUITool.git
+cd KafkaUITool/kafka-ui-java
+
+# Launch the GUI application directly
+./mvnw javafx:run
+
+# Alternative: Build and run JAR
+./mvnw clean package
+java --module-path /path/to/javafx/lib --add-modules javafx.controls,javafx.fxml -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar
+```
+
+#### Option 2: Launch REST API Server (For Remote Access)
+```bash
+# Build and run with REST API server
+./mvnw clean package
+java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar --api-server --port=8080
+
+# Server will be available at: http://localhost:8080
+```
+
+#### Option 3: Use CLI Interface (For Automation/Scripting)
+```bash
+# Build and use command line interface
+./mvnw clean package
+java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar topic list --brokers=localhost:9092
+java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar cluster info --brokers=localhost:9092
+```
+
+### 🎯 Platform-Specific Quick Start
+
+#### Windows Users
 ```cmd
 # Development build (compile + test + package)
 build.bat
 
 # Production release (creates Windows exe with embedded JRE)
 release.bat
+
+# Run the GUI
+cd kafka-ui-java
+.\mvnw.cmd javafx:run
 ```
 
-See [BUILD_SCRIPTS.md](BUILD_SCRIPTS.md) for detailed information about the automated build process.
+#### macOS/Linux Users
+```bash
+# Make scripts executable
+chmod +x run.sh demo-api-server.sh
 
-### Enterprise Features
-For comprehensive documentation on all advanced features, see [COMPREHENSIVE_FEATURES.md](COMPREHENSIVE_FEATURES.md).
+# Quick development run
+./run.sh
 
-#### Key Enterprise Capabilities
-- **REST API**: Full programmatic access on port 8080
-- **CLI Tools**: Command-line interface for automation
-- **Plugin System**: Extensible architecture
-- **Monitoring Dashboard**: Real-time metrics and alerts
-- **Schema Registry**: Complete schema management
-- **Kafka Connect**: Connector lifecycle management
-- **Security**: Data masking, encryption, ACL management
-- **Multi-cluster**: Unified management interface
+# Run with API server
+./demo-api-server.sh
+
+# Manual build and run
+cd kafka-ui-java
+./mvnw javafx:run
+```
+
+### 📦 Packaging and Distribution
+
+#### Create Standalone JAR
+```bash
+cd kafka-ui-java
+./mvnw clean package
+
+# Creates: target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar
+# This JAR includes all dependencies and can be distributed
+```
+
+#### Create Native Installers (Advanced)
+```bash
+# Requires JDK 17+ with jpackage tool
+./mvnw clean package
+jpackage --input target --main-jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar --main-class com.kafkatool.KafkaUIApplication --name "Kafka UI Tool" --type msi  # Windows
+jpackage --input target --main-jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar --main-class com.kafkatool.KafkaUIApplication --name "Kafka UI Tool" --type dmg  # macOS
+jpackage --input target --main-jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar --main-class com.kafkatool.KafkaUIApplication --name "Kafka UI Tool" --type deb  # Linux
+```
+
+### 🔧 Development Setup
+
+For detailed build information and automated scripts, see [docs/BUILD_SCRIPTS.md](docs/BUILD_SCRIPTS.md).
 
 ### Manual Build Prerequisites
 1. **Install Java 17+**:
@@ -143,6 +210,19 @@ For comprehensive documentation on all advanced features, see [COMPREHENSIVE_FEA
      # Windows (using Chocolatey)
      choco install maven
      ```
+
+### Enterprise Features
+For comprehensive documentation on all advanced features, see [docs/COMPREHENSIVE_FEATURES.md](docs/COMPREHENSIVE_FEATURES.md).
+
+#### Key Enterprise Capabilities
+- **REST API**: Full programmatic access on port 8080
+- **CLI Tools**: Command-line interface for automation
+- **Plugin System**: Extensible architecture
+- **Monitoring Dashboard**: Real-time metrics and alerts
+- **Schema Registry**: Complete schema management
+- **Kafka Connect**: Connector lifecycle management
+- **Security**: Data masking, encryption, ACL management
+- **Multi-cluster**: Unified management interface
 
 ### Build Instructions
 
@@ -206,6 +286,16 @@ java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar --api-server --po
 # Use CLI interface
 java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar topic list --brokers=localhost:9092
 ```
+
+## 📚 Documentation
+
+### Additional Documentation
+- [Build Scripts Documentation](docs/BUILD_SCRIPTS.md) - Detailed build information and automated scripts
+- [Comprehensive Features](docs/COMPREHENSIVE_FEATURES.md) - Complete feature documentation  
+- [Implementation Summary](docs/IMPLEMENTATION_SUMMARY.md) - Technical implementation details
+- [UI Layout Diagram](docs/UI_LAYOUT_DIAGRAM.md) - User interface design documentation
+- [Testing Report](docs/FINAL_TESTING_REPORT.md) - Test results and regression information
+- [Screenshots](docs/screenshots-documentation.md) - Visual documentation
 
 ## 🎨 Architecture
 
