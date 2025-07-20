@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.kafkatool.controller.MainController">
+   <top>
+      <!-- Menu Bar -->
+      <MenuBar>
+         <menus>
+            <Menu mnemonicParsing="false" text="File">
+               <items>
+                  <MenuItem fx:id="addClusterMenuItem" mnemonicParsing="false" onAction="#onAddCluster" text="Add Cluster..." />
+                  <SeparatorMenuItem />
+                  <MenuItem fx:id="settingsMenuItem" mnemonicParsing="false" onAction="#onSettings" text="Settings..." />
+                  <SeparatorMenuItem />
+                  <MenuItem fx:id="exitMenuItem" mnemonicParsing="false" onAction="#onExit" text="Exit" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Topic">
+               <items>
+                  <MenuItem fx:id="createTopicMenuItem" mnemonicParsing="false" onAction="#onCreateTopic" text="Create Topic..." />
+                  <MenuItem fx:id="deleteTopicMenuItem" mnemonicParsing="false" onAction="#onDeleteTopic" text="Delete Topic" />
+                  <SeparatorMenuItem />
+                  <MenuItem fx:id="refreshTopicsMenuItem" mnemonicParsing="false" onAction="#onRefreshTopics" text="Refresh Topics" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Message">
+               <items>
+                  <MenuItem fx:id="produceMessageMenuItem" mnemonicParsing="false" onAction="#onProduceMessage" text="Produce Message..." />
+                  <SeparatorMenuItem />
+                  <MenuItem fx:id="searchMessagesMenuItem" mnemonicParsing="false" onAction="#onSearchMessages" text="Search Messages..." />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Help">
+               <items>
+                  <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" onAction="#onAbout" text="About" />
+               </items>
+            </Menu>
+         </menus>
+      </MenuBar>
+   </top>
+   <center>
+      <!-- Main Split Pane -->
+      <SplitPane dividerPositions="0.25" orientation="HORIZONTAL" styleClass="main-split-pane">
+         <items>
+            <!-- Left Panel: Clusters and Topics -->
+            <VBox styleClass="left-panel">
+               <children>
+                  <!-- Clusters Section -->
+                  <TitledPane animated="false" expanded="true" text="Clusters" styleClass="section-title">
+                     <content>
+                        <VBox spacing="5">
+                           <children>
+                              <ListView fx:id="clustersListView" prefHeight="150" styleClass="clusters-list" />
+                              <HBox alignment="CENTER_RIGHT" spacing="5">
+                                 <children>
+                                    <Button fx:id="addClusterButton" mnemonicParsing="false" onAction="#onAddCluster" text="Add" styleClass="action-button" />
+                                    <Button fx:id="editClusterButton" mnemonicParsing="false" onAction="#onEditCluster" text="Edit" styleClass="action-button" />
+                                    <Button fx:id="deleteClusterButton" mnemonicParsing="false" onAction="#onDeleteCluster" text="Delete" styleClass="action-button" />
+                                    <Button fx:id="connectClusterButton" mnemonicParsing="false" onAction="#onConnectCluster" text="Connect" styleClass="primary-button" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </content>
+                  </TitledPane>
+                  
+                  <!-- Topics Section -->
+                  <TitledPane animated="false" expanded="true" text="Topics" styleClass="section-title">
+                     <content>
+                        <VBox spacing="5">
+                           <children>
+                              <HBox alignment="CENTER_LEFT" spacing="5">
+                                 <children>
+                                    <TextField fx:id="topicFilterField" promptText="Filter topics..." styleClass="filter-field" HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="refreshTopicsButton" mnemonicParsing="false" onAction="#onRefreshTopics" text="⟳" styleClass="icon-button" />
+                                 </children>
+                              </HBox>
+                              <ListView fx:id="topicsListView" prefHeight="200" styleClass="topics-list" />
+                              <HBox alignment="CENTER_RIGHT" spacing="5">
+                                 <children>
+                                    <Button fx:id="createTopicButton" mnemonicParsing="false" onAction="#onCreateTopic" text="Create" styleClass="action-button" />
+                                    <Button fx:id="configTopicButton" mnemonicParsing="false" onAction="#onConfigTopic" text="Config" styleClass="action-button" />
+                                    <Button fx:id="deleteTopicButtonSide" mnemonicParsing="false" onAction="#onDeleteTopic" text="Delete" styleClass="action-button" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </content>
+                  </TitledPane>
+               </children>
+            </VBox>
+            
+            <!-- Right Panel: Messages and Details -->
+            <VBox styleClass="right-panel">
+               <children>
+                  <!-- Partition Selection -->
+                  <HBox alignment="CENTER_LEFT" spacing="10" styleClass="partition-bar">
+                     <children>
+                        <Label text="Partition:" styleClass="label-bold" />
+                        <ComboBox fx:id="partitionComboBox" prefWidth="100" />
+                        <Label text="Offset Range:" styleClass="label-bold" />
+                        <TextField fx:id="fromOffsetField" prefWidth="80" promptText="From" styleClass="offset-field" />
+                        <Label text="to" />
+                        <TextField fx:id="toOffsetField" prefWidth="80" promptText="To" styleClass="offset-field" />
+                        <Button fx:id="loadMessagesButton" mnemonicParsing="false" onAction="#onLoadMessages" text="Load" styleClass="primary-button" />
+                        <Button fx:id="loadLatestButton" mnemonicParsing="false" onAction="#onLoadLatest" text="Load Latest" styleClass="action-button" />
+                     </children>
+                     <padding>
+                        <Insets bottom="5" left="5" right="5" top="5" />
+                     </padding>
+                  </HBox>
+                  
+                  <!-- Messages Split Pane -->
+                  <SplitPane dividerPositions="0.6" orientation="VERTICAL" VBox.vgrow="ALWAYS" styleClass="messages-split-pane">
+                     <items>
+                        <!-- Messages Table -->
+                        <VBox>
+                           <children>
+                              <Label text="Messages" styleClass="section-header" />
+                              <TableView fx:id="messagesTableView" VBox.vgrow="ALWAYS" styleClass="messages-table">
+                                 <columns>
+                                    <TableColumn fx:id="offsetColumn" prefWidth="80" text="Offset" />
+                                    <TableColumn fx:id="partitionColumn" prefWidth="70" text="Partition" />
+                                    <TableColumn fx:id="keyColumn" prefWidth="150" text="Key" />
+                                    <TableColumn fx:id="valueColumn" prefWidth="300" text="Value" />
+                                    <TableColumn fx:id="timestampColumn" prefWidth="150" text="Timestamp" />
+                                    <TableColumn fx:id="headersColumn" prefWidth="200" text="Headers" />
+                                 </columns>
+                              </TableView>
+                           </children>
+                        </VBox>
+                        
+                        <!-- Message Details -->
+                        <VBox>
+                           <children>
+                              <Label text="Message Details" styleClass="section-header" />
+                              <TabPane fx:id="messageDetailsTabPane" VBox.vgrow="ALWAYS" styleClass="details-tabs">
+                                 <tabs>
+                                    <Tab text="Raw">
+                                       <content>
+                                          <TextArea fx:id="rawMessageTextArea" editable="false" wrapText="true" styleClass="message-content" />
+                                       </content>
+                                    </Tab>
+                                    <Tab text="JSON">
+                                       <content>
+                                          <TextArea fx:id="jsonMessageTextArea" editable="false" wrapText="true" styleClass="message-content" />
+                                       </content>
+                                    </Tab>
+                                    <Tab text="Headers">
+                                       <content>
+                                          <TextArea fx:id="headersTextArea" editable="false" wrapText="true" styleClass="message-content" />
+                                       </content>
+                                    </Tab>
+                                 </tabs>
+                              </TabPane>
+                           </children>
+                        </VBox>
+                     </items>
+                  </SplitPane>
+               </children>
+            </VBox>
+         </items>
+      </SplitPane>
+   </center>
+   <bottom>
+      <!-- Status Bar -->
+      <HBox alignment="CENTER_LEFT" spacing="10" styleClass="status-bar">
+         <children>
+            <Label fx:id="statusLabel" text="Ready" styleClass="status-text" />
+            <Separator orientation="VERTICAL" />
+            <Label fx:id="connectionStatusLabel" text="Not Connected" styleClass="connection-status" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="messageCountLabel" text="Messages: 0" styleClass="info-text" />
+            <ProgressIndicator fx:id="loadingIndicator" maxHeight="16" maxWidth="16" visible="false" />
+         </children>
+         <padding>
+            <Insets bottom="5" left="10" right="10" top="5" />
+         </padding>
+      </HBox>
+   </bottom>
+</BorderPane>

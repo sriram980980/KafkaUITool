@@ -5,12 +5,26 @@ obj/
 *.suo
 *.userosscache
 *.sln.docstates
+
 # Ignore VS Code settings
 .vscode/
+
 # Ignore OS generated files
 .DS_Store
 Thumbs.db
+
 # Ignore NuGet packages
 *.nupkg
+
 # Ignore logs
 *.log
+
+# Java/Maven specific
+kafka-ui-java/target/
+kafka-ui-java/.idea/
+kafka-ui-java/*.iml
+kafka-ui-java/*.ipr
+kafka-ui-java/*.iws
+
+# Application logs
+.kafka-ui-tool/
