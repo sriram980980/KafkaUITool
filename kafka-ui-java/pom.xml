@@ -22,6 +22,16 @@
         <jackson.version>2.16.1</jackson.version>
         <logback.version>1.4.14</logback.version>
         <junit.version>5.10.1</junit.version>
+        <avro.version>1.11.3</avro.version>
+        <protobuf.version>3.25.1</protobuf.version>
+        <schema.registry.version>7.5.1</schema.registry.version>
+        <spring.boot.version>3.2.1</spring.boot.version>
+        <httpclient.version>5.3</httpclient.version>
+        <javalin.version>5.6.3</javalin.version>
+        <picocli.version>4.7.5</picocli.version>
+        <h2.version>2.2.224</h2.version>
+        <jpa.version>3.1.0</jpa.version>
+        <hibernate.version>6.4.1.Final</hibernate.version>
     </properties>
 
     <dependencies>
@@ -61,6 +71,77 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+        </dependency>
+
+        <!-- Schema Registry and Serialization (using open source alternatives) -->
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>${avro.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
+        </dependency>
+
+        <!-- REST API Server -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin</artifactId>
+            <version>${javalin.version}</version>
+        </dependency>
+
+        <!-- CLI Support -->
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>${picocli.version}</version>
+        </dependency>
+
+        <!-- HTTP Client -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>${httpclient.version}</version>
+        </dependency>
+
+        <!-- Database for Settings and Metrics -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>${jpa.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+
+        <!-- CSV Processing -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.10.0</version>
+        </dependency>
+
+        <!-- Security -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>6.2.1</version>
+        </dependency>
+
+        <!-- Monitoring -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>1.12.1</version>
         </dependency>
 
         <!-- Testing -->

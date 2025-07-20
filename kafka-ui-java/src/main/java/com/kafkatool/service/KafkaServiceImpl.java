@@ -439,6 +439,7 @@ public class KafkaServiceImpl implements KafkaService {
         }
         
         return new KafkaMessage(
+            record.topic(),
             record.offset(),
             record.partition(),
             record.key(),

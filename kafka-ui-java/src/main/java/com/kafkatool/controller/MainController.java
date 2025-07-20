@@ -1016,7 +1016,7 @@ public class MainController implements Initializable {
         jsonMessageTextArea.setText(jsonContent != null ? jsonContent : message.getValue());
         
         // Update headers
-        headersTextArea.setText(message.getHeaders() != null ? message.getHeaders() : "No headers");
+        headersTextArea.setText(message.getHeaders() != null ? message.getHeadersAsString() : "No headers");
     }
     
     public void shutdown() {

@@ -10,23 +10,38 @@ import java.util.Map;
  */
 public class KafkaMessage {
     
+    private final StringProperty topic = new SimpleStringProperty();
     private final LongProperty offset = new SimpleLongProperty();
     private final IntegerProperty partition = new SimpleIntegerProperty();
     private final StringProperty key = new SimpleStringProperty();
     private final StringProperty value = new SimpleStringProperty();
     private final ObjectProperty<LocalDateTime> timestamp = new SimpleObjectProperty<>();
-    private final StringProperty headers = new SimpleStringProperty();
+    private final ObjectProperty<Map<String, String>> headers = new SimpleObjectProperty<>();
     
     public KafkaMessage() {}
     
-    public KafkaMessage(long offset, int partition, String key, String value, 
+    public KafkaMessage(String topic, long offset, int partition, String key, String value, 
                        LocalDateTime timestamp, Map<String, String> headers) {
+        setTopic(topic);
         setOffset(offset);
         setPartition(partition);
         setKey(key);
         setValue(value);
         setTimestamp(timestamp);
-        setHeaders(formatHeaders(headers));
+        setHeaders(headers);
+    }
+    
+    // Topic property
+    public String getTopic() {
+        return topic.get();
+    }
+    
+    public void setTopic(String topic) {
+        this.topic.set(topic);
+    }
+    
+    public StringProperty topicProperty() {
+        return topic;
     }
     
     // Offset property
@@ -95,24 +110,26 @@ public class KafkaMessage {
     }
     
     // Headers property
-    public String getHeaders() {
+    public Map<String, String> getHeaders() {
         return headers.get();
     }
     
-    public void setHeaders(String headers) {
+    public void setHeaders(Map<String, String> headers) {
         this.headers.set(headers);
     }
     
-    public StringProperty headersProperty() {
+    public ObjectProperty<Map<String, String>> headersProperty() {
         return headers;
     }
     
-    private String formatHeaders(Map<String, String> headers) {
-        if (headers == null || headers.isEmpty()) {
+    // Helper method to get headers as formatted string for display
+    public String getHeadersAsString() {
+        Map<String, String> headerMap = getHeaders();
+        if (headerMap == null || headerMap.isEmpty()) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        headers.forEach((k, v) -> {
+        headerMap.forEach((k, v) -> {
             if (sb.length() > 0) sb.append(", ");
             sb.append(k).append("=").append(v);
         });
@@ -121,7 +138,7 @@ public class KafkaMessage {
     
     @Override
     public String toString() {
-        return String.format("Message[offset=%d, partition=%d, key=%s, value=%s]",
-                getOffset(), getPartition(), getKey(), getValue());
+        return String.format("Message[topic=%s, offset=%d, partition=%d, key=%s, value=%s]",
+                getTopic(), getOffset(), getPartition(), getKey(), getValue());
     }
 }
