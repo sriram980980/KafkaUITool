@@ -178,7 +178,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.kafkatool.KafkaUIApplication</mainClass>
+                    <mainClass>com.kafkatool.Main</mainClass>
                 </configuration>
             </plugin>
 
@@ -206,7 +206,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.kafkatool.KafkaUIApplication</mainClass>
+                            <mainClass>com.kafkatool.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

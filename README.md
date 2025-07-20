@@ -30,6 +30,8 @@ The tool has been completely rewritten in Java using JavaFX for cross-platform c
 ### ✅ Core Features (Completed)
 - **Project Architecture**: Maven-based Java project with MVC pattern
 - **Modern UI**: JavaFX with FXML and elegant dark theme CSS
+- **Unified Entry Point**: Smart main class that automatically detects GUI vs API server mode
+- **Headless API Server**: REST API server that runs independently of JavaFX for containerized/server deployments
 - **Cluster Management**: Add, edit, delete, and connect to Kafka clusters
 - **Topic Management**: List, create, delete, and configure topics
 - **Message Operations**: View messages, produce messages, search functionality
@@ -119,6 +121,7 @@ java --module-path /path/to/javafx/lib --add-modules javafx.controls,javafx.fxml
 java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar --api-server --port=8080
 
 # Server will be available at: http://localhost:8080
+# The API server now runs independently of JavaFX and can be used in headless environments
 ```
 
 #### Option 3: Use CLI Interface (For Automation/Scripting)
@@ -303,7 +306,9 @@ java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar topic list --brok
 ```
 kafka-ui-java/
 ├── src/main/java/com/kafkatool/
-│   ├── KafkaUIApplication.java          # Main application class
+│   ├── Main.java                       # Unified entry point with smart mode detection
+│   ├── KafkaUIApplication.java          # JavaFX GUI application class
+│   ├── RestApiMain.java                # Standalone REST API server (JavaFX-free)
 │   ├── controller/
 │   │   └── MainController.java          # Main UI controller (MVC)
 │   ├── model/
@@ -371,11 +376,37 @@ kafka-ui-java/
 1. **Connection Failed**: Verify Kafka broker URLs and network connectivity
 2. **Build Errors**: Ensure Java 17+ and Maven 3.6+ are installed
 3. **UI Issues**: Make sure JavaFX is properly installed for your platform
+4. **API Server Launch Issues**: 
+   - Use `--api-server` flag to run in headless mode without JavaFX
+   - The API server is now decoupled from JavaFX and can run in containerized environments
+   - Check that the port is not already in use
+
+### Usage Modes
+The application now supports multiple launch modes:
+
+**GUI Mode (Default)**: 
+```bash
+java -jar kafka-ui-tool.jar
+# Requires JavaFX for desktop interface
+```
+
+**API Server Mode**:
+```bash
+java -jar kafka-ui-tool.jar --api-server --port=8080
+# Runs headless REST API server, no JavaFX required
+```
+
+**Help/CLI Mode**:
+```bash
+java -jar kafka-ui-tool.jar --help
+# Shows usage information
+```
 
 ### Platform-Specific Notes
 - **Linux**: May require additional JavaFX installation: `sudo apt install openjfx`
 - **macOS**: Works with both Intel and Apple Silicon Macs
 - **Windows**: Requires Java 17+ with JavaFX support
+- **Docker/Containers**: Use `--api-server` mode for containerized deployments
 
 ## 🔄 Legacy C# Version
 
