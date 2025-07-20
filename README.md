@@ -1,9 +1,4 @@
 # Kafka UI Tool v2.0 - Cross-Platform Java/JavaFX Edition
-
-A modern, cross-platform Kafka management tool built with Java and JavaFX, featuring an elegant dark theme UI and robust architecture.
-
-![Kafka UI Tool](./legacy-csharp/screenshot.png)
-
 ## 🚀 New Java/JavaFX Implementation
 
 The tool has been completely rewritten in Java using JavaFX for cross-platform compatibility and modern UI design.
