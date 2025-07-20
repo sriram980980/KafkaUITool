@@ -3,7 +3,9 @@
 
 The tool has been completely rewritten in Java using JavaFX for cross-platform compatibility and modern UI design.
 ![alt text](image.png)
-
+![alt text](image-1.png)
+![alt text](image-2.png)
+![alt text](image-3.png)
 ### Key Features
 - **Cross-Platform**: Runs on Windows, macOS, and Linux
 - **Modern UI**: JavaFX with elegant dark theme and CSS styling
