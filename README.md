@@ -89,7 +89,20 @@ The tool has been completely rewritten in Java using JavaFX for cross-platform c
 
 ## 🛠 Build & Run
 
-### Prerequisites
+### Quick Start (Windows)
+For Windows users, we provide automated build scripts:
+
+```cmd
+# Development build (compile + test + package)
+build.bat
+
+# Production release (creates Windows exe with embedded JRE)
+release.bat
+```
+
+See [BUILD_SCRIPTS.md](BUILD_SCRIPTS.md) for detailed information about the automated build process.
+
+### Manual Build Prerequisites
 1. **Install Java 17+**:
    ```bash
    # Ubuntu/Debian
