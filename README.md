@@ -301,7 +301,27 @@ Contributions are welcome! Please feel free to submit pull requests or open issu
 
 ## 📄 License
 
-This project is open source. See the repository for license details.
+This project is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
+
+### License Summary
+- ✅ **Free to use** for personal, educational, and commercial purposes
+- ✅ **Commercial use allowed** without restrictions
+- ✅ **Modification and distribution** permitted
+- ⚠️ **Copyleft requirement**: If you modify and distribute this software, you must make your source code available under the same license
+- ⚠️ **Enterprise users**: Any modifications or derivative works must be published as open source
+
+This license ensures the software remains free and open while requiring enterprise users who modify the code to contribute back to the community.
+
+For the complete license text, see the [LICENSE](LICENSE) file.
+
+### Quick License Guide
+| Use Case | Allowed | Requirements |
+|----------|---------|--------------|
+| Personal use | ✅ Yes | None |
+| Commercial use | ✅ Yes | None |
+| Modify for internal use | ✅ Yes | Source code must be available if distributed |
+| Distribute modifications | ✅ Yes | Must publish source code under MPL-2.0 |
+| Create proprietary derivative | ❌ No | Must remain open source |
 
 ---
 
