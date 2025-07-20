@@ -96,6 +96,13 @@ public class MainController implements Initializable {
     @FXML private Button configTopicButton;
     @FXML private Button deleteTopicButtonSide;
     
+    // FXML Controls - Chat Section
+    @FXML private TextArea chatMessagesArea;
+    @FXML private TextField chatInputField;
+    @FXML private Button sendChatButton;
+    @FXML private Button clearChatButton;
+    @FXML private Button connectChatButton;
+    
     // FXML Controls - Right Panel
     @FXML private ComboBox<Integer> partitionComboBox;
     @FXML private TextField fromOffsetField;
@@ -129,6 +136,7 @@ public class MainController implements Initializable {
         setupClustersSection();
         setupTopicsSection();
         setupMessagesSection();
+        setupChatSection();
         setupStatusBar();
         setupMenuBindings();
         
@@ -273,6 +281,29 @@ public class MainController implements Initializable {
                 }
             }
         );
+    }
+    
+    private void setupChatSection() {
+        // Set initial state
+        chatMessagesArea.setEditable(false);
+        chatMessagesArea.setWrapText(true);
+        
+        // Add welcome message
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        String welcomeMessage = String.format("[%s] System: Chat section initialized. Click 'Connect' to start chatting.%n", timestamp);
+        chatMessagesArea.setText(welcomeMessage);
+        
+        // Setup Enter key handler for chat input
+        chatInputField.setOnKeyPressed(event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                onSendChatMessage();
+                event.consume();
+            }
+        });
+        
+        // Initial button state
+        connectChatButton.setText("Connect");
+        connectChatButton.setStyle("-fx-background-color: #4a90e2; -fx-text-fill: white;");
     }
     
     private void setupStatusBar() {
@@ -2846,6 +2877,79 @@ public class MainController implements Initializable {
                     }
                 });
             });
+    }
+    
+    // ===== CHAT SECTION METHODS =====
+    
+    @FXML
+    private void onSendChatMessage() {
+        String message = chatInputField.getText().trim();
+        if (!message.isEmpty()) {
+            // Add timestamp and format the message
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            String formattedMessage = String.format("[%s] You: %s%n", timestamp, message);
+            
+            // Append to chat messages area
+            chatMessagesArea.appendText(formattedMessage);
+            
+            // Clear input field
+            chatInputField.clear();
+            
+            // Auto-scroll to bottom
+            chatMessagesArea.positionCaret(chatMessagesArea.getLength());
+            
+            updateStatus("Chat message sent");
+            
+            // Simulate a simple echo response after a short delay
+            CompletableFuture.delayedExecutor(1, java.util.concurrent.TimeUnit.SECONDS)
+                .execute(() -> Platform.runLater(() -> {
+                    String responseTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    String response = String.format("[%s] System: Message received: %s%n", responseTime, message);
+                    chatMessagesArea.appendText(response);
+                    chatMessagesArea.positionCaret(chatMessagesArea.getLength());
+                }));
+        }
+    }
+    
+    @FXML
+    private void onClearChat() {
+        boolean confirmed = DialogHelper.showConfirmDialog(
+            "Clear Chat", 
+            "Clear all chat messages?",
+            "This will remove all messages from the chat window."
+        );
+        
+        if (confirmed) {
+            chatMessagesArea.clear();
+            updateStatus("Chat history cleared");
+        }
+    }
+    
+    @FXML
+    private void onConnectChat() {
+        if (connectChatButton.getText().equals("Connect")) {
+            // Simulate chat connection
+            connectChatButton.setText("Disconnect");
+            connectChatButton.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+            
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            String welcomeMessage = String.format("[%s] System: Connected to chat. Welcome!%n", timestamp);
+            chatMessagesArea.appendText(welcomeMessage);
+            chatMessagesArea.positionCaret(chatMessagesArea.getLength());
+            
+            updateStatus("Connected to chat");
+        } else {
+            // Simulate chat disconnection
+            connectChatButton.setText("Connect");
+            connectChatButton.setStyle("-fx-background-color: #4a90e2; -fx-text-fill: white;");
+            
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            String disconnectMessage = String.format("[%s] System: Disconnected from chat.%n", timestamp);
+            chatMessagesArea.appendText(disconnectMessage);
+            chatMessagesArea.positionCaret(chatMessagesArea.getLength());
+            
+            updateStatus("Disconnected from chat");
+        }
     }
     
     public void shutdown() {

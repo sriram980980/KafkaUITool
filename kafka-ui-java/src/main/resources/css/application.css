@@ -449,3 +449,31 @@
 .success-text {
     -fx-text-fill: #51cf66;
 }
+
+/* Chat section styling */
+.chat-messages {
+    -fx-background-color: #1e1e1e;
+    -fx-text-fill: #e0e0e0;
+    -fx-border-color: #505050;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-font-family: "Consolas", "Monaco", "Courier New", monospace;
+    -fx-font-size: 12px;
+    -fx-control-inner-background: #1e1e1e;
+}
+
+.chat-input {
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: #e0e0e0;
+    -fx-border-color: #505050;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-padding: 6;
+}
+
+.chat-input:focused {
+    -fx-border-color: #0096c9;
+    -fx-border-width: 2;
+}

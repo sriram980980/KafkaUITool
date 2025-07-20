@@ -124,6 +124,29 @@
                         </VBox>
                      </content>
                   </TitledPane>
+                  
+                  <!-- Chat Section -->
+                  <TitledPane animated="false" expanded="true" text="Chat" styleClass="section-title">
+                     <content>
+                        <VBox spacing="5">
+                           <children>
+                              <TextArea fx:id="chatMessagesArea" editable="false" prefHeight="150" wrapText="true" styleClass="chat-messages" promptText="Chat messages will appear here..." />
+                              <HBox alignment="CENTER_LEFT" spacing="5">
+                                 <children>
+                                    <TextField fx:id="chatInputField" promptText="Type your message..." styleClass="chat-input" HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="sendChatButton" mnemonicParsing="false" onAction="#onSendChatMessage" text="Send" styleClass="primary-button" />
+                                 </children>
+                              </HBox>
+                              <HBox alignment="CENTER_RIGHT" spacing="5">
+                                 <children>
+                                    <Button fx:id="clearChatButton" mnemonicParsing="false" onAction="#onClearChat" text="Clear" styleClass="action-button" />
+                                    <Button fx:id="connectChatButton" mnemonicParsing="false" onAction="#onConnectChat" text="Connect" styleClass="action-button" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </content>
+                  </TitledPane>
                </children>
             </VBox>
             
