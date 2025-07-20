@@ -34,7 +34,7 @@ public class KafkaConnectController {
     @FXML private Label statusLabel;
     @FXML private Label clusterInfoLabel;
     
-    private KafkaConnectService connectService;
+    private KafkaConnectService connectService = new KafkaConnectServiceImpl();
     private ObservableList<ConnectorInfo> connectors = FXCollections.observableArrayList();
     private ConnectorInfo selectedConnector;
     
