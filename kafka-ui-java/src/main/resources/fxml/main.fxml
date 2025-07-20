@@ -40,6 +40,31 @@
                   <SeparatorMenuItem />
                   <MenuItem fx:id="clusterConfigMenuItem" mnemonicParsing="false" onAction="#onClusterConfig" text="Cluster Configuration..." />
                   <MenuItem fx:id="brokerConfigMenuItem" mnemonicParsing="false" onAction="#onBrokerConfig" text="Broker Configuration..." />
+                  <SeparatorMenuItem />
+                  <MenuItem fx:id="aclManagementMenuItem" mnemonicParsing="false" onAction="#onACLManagement" text="ACL Management..." />
+                  <MenuItem fx:id="multiClusterMenuItem" mnemonicParsing="false" onAction="#onMultiCluster" text="Multi-Cluster Management..." />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Enterprise">
+               <items>
+                  <MenuItem fx:id="schemaRegistryMenuItem" mnemonicParsing="false" onAction="#onSchemaRegistry" text="Schema Registry..." />
+                  <MenuItem fx:id="kafkaConnectMenuItem" mnemonicParsing="false" onAction="#onKafkaConnect" text="Kafka Connect..." />
+                  <MenuItem fx:id="metricsDashboardMenuItem" mnemonicParsing="false" onAction="#onMetricsDashboard" text="Metrics Dashboard..." />
+                  <SeparatorMenuItem />
+                  <MenuItem fx:id="importExportMenuItem" mnemonicParsing="false" onAction="#onImportExport" text="Import/Export Messages..." />
+                  <MenuItem fx:id="bulkOperationsMenuItem" mnemonicParsing="false" onAction="#onBulkOperations" text="Bulk Operations..." />
+                  <SeparatorMenuItem />
+                  <MenuItem fx:id="alertsMenuItem" mnemonicParsing="false" onAction="#onAlerts" text="Monitoring Alerts..." />
+                  <MenuItem fx:id="workspaceMenuItem" mnemonicParsing="false" onAction="#onWorkspace" text="Workspace Management..." />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Tools">
+               <items>
+                  <MenuItem fx:id="regexSearchMenuItem" mnemonicParsing="false" onAction="#onRegexSearch" text="Advanced Search..." />
+                  <MenuItem fx:id="messageReplayMenuItem" mnemonicParsing="false" onAction="#onMessageReplay" text="Message Replay..." />
+                  <SeparatorMenuItem />
+                  <MenuItem fx:id="themeMenuItem" mnemonicParsing="false" onAction="#onToggleTheme" text="Toggle Theme" />
+                  <MenuItem fx:id="keyboardShortcutsMenuItem" mnemonicParsing="false" onAction="#onKeyboardShortcuts" text="Keyboard Shortcuts..." />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="Help">

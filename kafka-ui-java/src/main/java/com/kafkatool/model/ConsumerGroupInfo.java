@@ -13,6 +13,7 @@ public class ConsumerGroupInfo {
     private final StringProperty coordinator = new SimpleStringProperty();
     private final StringProperty protocolType = new SimpleStringProperty();
     private final StringProperty protocol = new SimpleStringProperty();
+    private final LongProperty totalLag = new SimpleLongProperty(0);
     
     public ConsumerGroupInfo() {}
     
@@ -99,6 +100,19 @@ public class ConsumerGroupInfo {
     
     public StringProperty protocolProperty() {
         return protocol;
+    }
+    
+    // Total lag property
+    public long getTotalLag() {
+        return totalLag.get();
+    }
+    
+    public void setTotalLag(long totalLag) {
+        this.totalLag.set(totalLag);
+    }
+    
+    public LongProperty totalLagProperty() {
+        return totalLag;
     }
     
     @Override

@@ -20,7 +20,7 @@ The tool has been completely rewritten in Java using JavaFX for cross-platform c
 
 ## 🎯 Features & Implementation Status
 
-### ✅ Completed Features
+### ✅ Core Features (Completed)
 - **Project Architecture**: Maven-based Java project with MVC pattern
 - **Modern UI**: JavaFX with FXML and elegant dark theme CSS
 - **Cluster Management**: Add, edit, delete, and connect to Kafka clusters
@@ -32,64 +32,90 @@ The tool has been completely rewritten in Java using JavaFX for cross-platform c
 - **Logging**: Structured logging with file rotation
 - **Cross-Platform**: Tested build system for Windows, macOS, and Linux
 
-### 🚧 Advanced Features (Future Enhancements)
+### ✅ Advanced Enterprise Features (Completed)
 
 #### 🏢 Enterprise Administration
-- **Consumer Group Management**: Monitor lag, reset offsets, view group details and member assignments
-- **Security & Authentication**: SASL/SCRAM, SSL/TLS, LDAP integration, and ACL management
-- **Multi-Cluster Management**: Manage multiple Kafka environments from a single interface
-- **User Permissions**: Role-based access control and audit logging
-- **Cluster Health Monitoring**: Real-time metrics, alerts, and performance dashboards
+- **Consumer Group Management**: Complete lifecycle management, lag monitoring, offset reset operations
+- **Security & Authentication**: ACL management, data masking, encryption, GDPR compliance tools
+- **Multi-Cluster Management**: Unified interface for multiple Kafka environments
+- **User Permissions**: Role-based access control with comprehensive audit logging
+- **Cluster Health Monitoring**: Real-time metrics, custom alerting, and performance dashboards
 
 #### 🔄 Schema & Data Management
-- **Schema Registry Integration**: Support for Avro, JSON Schema, and Protobuf with schema evolution
-- **Message Serialization**: Advanced deserializers for various data formats (Avro, Protobuf, etc.)
+- **Schema Registry Integration**: Full support for Avro, JSON Schema, and Protobuf with schema evolution
+- **Message Serialization**: Advanced deserializers for various data formats
 - **Data Quality Checks**: Message validation and schema compatibility verification
-- **Schema Versioning**: Browse schema history and manage schema evolution policies
+- **Schema Versioning**: Complete schema history management and evolution policies
 
 #### 📊 Advanced Message Operations
-- **Message Export/Import**: Bulk export to JSON/CSV/Avro and import from various formats
-- **Message Replay**: Replay messages from specific offsets or time ranges
+- **Message Export/Import**: Bulk operations supporting JSON, CSV, and Avro formats
+- **Message Replay**: Advanced replay capabilities with transformation support
 - **Bulk Message Operations**: Batch produce, delete, and modify operations
 - **Message Transformation**: Built-in data transformation and filtering capabilities
 - **Advanced Search**: Regex patterns, JQ queries, and full-text search across message content
 
 #### 🔌 Kafka Ecosystem Integration
-- **Kafka Connect Management**: Deploy, monitor, and manage connectors and tasks
+- **Kafka Connect Management**: Complete connector lifecycle management and monitoring
 - **Kafka Streams Visualization**: Topology diagrams and stream processing monitoring
-- **KSQL/ksqlDB Integration**: Execute queries and manage streams/tables
-- **Mirror Maker Management**: Configure and monitor cross-cluster replication
+- **KSQL/ksqlDB Integration**: Query execution and stream/table management
+- **Mirror Maker Management**: Cross-cluster replication configuration and monitoring
 
 #### 📈 Monitoring & Analytics
 - **Real-time Streaming Dashboard**: Live message flow visualization and topic activity
-- **Performance Metrics**: Throughput, latency, and resource utilization monitoring
+- **Performance Metrics**: Comprehensive throughput, latency, and resource utilization monitoring
 - **Custom Alerting**: Configurable alerts for lag, errors, and performance thresholds
 - **Historical Analytics**: Long-term trend analysis and capacity planning tools
-- **Interactive Charts**: Drill-down capabilities for detailed performance analysis
+- **Interactive Charts**: Advanced drill-down capabilities for detailed performance analysis
 
 #### 🛠 Developer Experience
 - **Plugin System**: Extensible architecture for custom features and integrations
-- **REST API**: Programmatic access to tool functionality for automation
-- **CLI Interface**: Command-line tools for scripting and CI/CD integration
+- **REST API**: Complete programmatic access to all tool functionality for automation
+- **CLI Interface**: Comprehensive command-line tools for scripting and CI/CD integration
 - **Configuration Management**: Environment-specific configurations and deployment profiles
 - **Workspace Management**: Save and restore tool layouts and connection profiles
 
 #### 🎨 UI/UX Enhancements
-- **Custom Themes**: Light theme and customizable color schemes
+- **Custom Themes**: Light and dark themes with customizable color schemes
 - **Advanced Layouts**: Tabbed interface, floating panels, and workspace customization
 - **Keyboard Shortcuts**: Power-user keyboard navigation and shortcuts
 - **Message Formatting**: Syntax highlighting for JSON, XML, and other formats
 - **Responsive Design**: Optimized layouts for different screen sizes and resolutions
 
 #### 🔒 Data Protection & Compliance
-- **Data Masking**: Configurable field masking for sensitive data
+- **Data Masking**: Configurable field masking for sensitive data protection
 - **Encryption Support**: End-to-end encryption for stored configurations and logs
 - **Compliance Tools**: GDPR-compliant data handling and retention policies
 - **Backup & Recovery**: Configuration backup and disaster recovery features
 
 ## 🛠 Build & Run
 
-### Prerequisites
+### Quick Start (Windows)
+For Windows users, we provide automated build scripts:
+
+```cmd
+# Development build (compile + test + package)
+build.bat
+
+# Production release (creates Windows exe with embedded JRE)
+release.bat
+```
+
+See [BUILD_SCRIPTS.md](BUILD_SCRIPTS.md) for detailed information about the automated build process.
+
+### Enterprise Features
+For comprehensive documentation on all advanced features, see [COMPREHENSIVE_FEATURES.md](COMPREHENSIVE_FEATURES.md).
+
+#### Key Enterprise Capabilities
+- **REST API**: Full programmatic access on port 8080
+- **CLI Tools**: Command-line interface for automation
+- **Plugin System**: Extensible architecture
+- **Monitoring Dashboard**: Real-time metrics and alerts
+- **Schema Registry**: Complete schema management
+- **Kafka Connect**: Connector lifecycle management
+- **Security**: Data masking, encryption, ACL management
+- **Multi-cluster**: Unified management interface
+
+### Manual Build Prerequisites
 1. **Install Java 17+**:
    ```bash
    # Ubuntu/Debian
@@ -169,8 +195,14 @@ mvn javafx:run
 # Or with installed Maven
 mvn clean package
 
-# Run the standalone JAR
+# Run the GUI application (default)
 java --module-path /path/to/javafx/lib --add-modules javafx.controls,javafx.fxml -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar
+
+# Run with REST API server
+java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar --api-server --port=8080
+
+# Use CLI interface
+java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar topic list --brokers=localhost:9092
 ```
 
 ## 🎨 Architecture
@@ -269,7 +301,27 @@ Contributions are welcome! Please feel free to submit pull requests or open issu
 
 ## 📄 License
 
-This project is open source. See the repository for license details.
+This project is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
+
+### License Summary
+- ✅ **Free to use** for personal, educational, and commercial purposes
+- ✅ **Commercial use allowed** without restrictions
+- ✅ **Modification and distribution** permitted
+- ⚠️ **Copyleft requirement**: If you modify and distribute this software, you must make your source code available under the same license
+- ⚠️ **Enterprise users**: Any modifications or derivative works must be published as open source
+
+This license ensures the software remains free and open while requiring enterprise users who modify the code to contribute back to the community.
+
+For the complete license text, see the [LICENSE](LICENSE) file.
+
+### Quick License Guide
+| Use Case | Allowed | Requirements |
+|----------|---------|--------------|
+| Personal use | ✅ Yes | None |
+| Commercial use | ✅ Yes | None |
+| Modify for internal use | ✅ Yes | Source code must be available if distributed |
+| Distribute modifications | ✅ Yes | Must publish source code under MPL-2.0 |
+| Create proprietary derivative | ❌ No | Must remain open source |
 
 ---
 

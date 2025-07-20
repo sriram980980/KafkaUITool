@@ -38,6 +38,11 @@ public interface KafkaService {
     CompletableFuture<Void> deleteTopicAsync(String brokerUrls, String topicName);
     
     /**
+     * Add partitions to an existing topic
+     */
+    CompletableFuture<Void> addPartitionsToTopicAsync(String brokerUrls, String topicName, int newPartitionCount);
+    
+    /**
      * Get topic configuration
      */
     CompletableFuture<Map<String, String>> getTopicConfigAsync(String brokerUrls, String topicName);
