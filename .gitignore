@@ -26,5 +26,10 @@ kafka-ui-java/*.iml
 kafka-ui-java/*.ipr
 kafka-ui-java/*.iws
 
+# Maven Wrapper files (DO NOT IGNORE - these should be committed)
+# kafka-ui-java/mvnw
+# kafka-ui-java/mvnw.cmd
+# kafka-ui-java/.mvn/
+
 # Application logs
 .kafka-ui-tool/

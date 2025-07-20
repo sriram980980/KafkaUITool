@@ -7,6 +7,7 @@ A modern, cross-platform Kafka management tool built with Java and JavaFX, featu
 ## 🚀 New Java/JavaFX Implementation
 
 The tool has been completely rewritten in Java using JavaFX for cross-platform compatibility and modern UI design.
+![alt text](image.png)
 
 ### Key Features
 - **Cross-Platform**: Runs on Windows, macOS, and Linux
@@ -18,7 +19,7 @@ The tool has been completely rewritten in Java using JavaFX for cross-platform c
 
 ## Requirements
 - **Java 17+**: OpenJDK or Oracle JDK 17 or higher
-- **Maven 3.6+**: For building the project
+- **Maven 3.6+**: For building the project (or use included Maven Wrapper)
 - **JavaFX 21**: Included as dependency
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 
@@ -106,19 +107,46 @@ The tool has been completely rewritten in Java using JavaFX for cross-platform c
    choco install openjdk17
    ```
 
-2. **Install Maven 3.6+**:
-   ```bash
-   # Ubuntu/Debian
-   sudo apt install maven
-   
-   # macOS (using Homebrew) 
-   brew install maven
-   
-   # Windows (using Chocolatey)
-   choco install maven
-   ```
+2. **Maven**: Choose one option:
+   - **Option A - Use Maven Wrapper (Recommended)**: No installation needed! The project includes Maven Wrapper
+   - **Option B - Install Maven 3.6+**:
+     ```bash
+     # Ubuntu/Debian
+     sudo apt install maven
+     
+     # macOS (using Homebrew) 
+     brew install maven
+     
+     # Windows (using Chocolatey)
+     choco install maven
+     ```
 
 ### Build Instructions
+
+#### Using Maven Wrapper (Recommended)
+The project includes Maven Wrapper, so you don't need to install Maven separately:
+
+```bash
+# Clone the repository
+git clone https://github.com/sriram980980/KafkaUITool.git
+cd KafkaUITool/kafka-ui-java
+
+# On Windows
+.\mvnw.cmd clean compile
+.\mvnw.cmd test
+.\mvnw.cmd clean package
+.\mvnw.cmd javafx:run
+
+# On macOS/Linux
+./mvnw clean compile
+./mvnw test  
+./mvnw clean package
+./mvnw javafx:run
+```
+
+#### Using Installed Maven
+If you have Maven installed:
+
 ```bash
 # Clone the repository
 git clone https://github.com/sriram980980/KafkaUITool.git
@@ -139,7 +167,11 @@ mvn javafx:run
 
 ### Running the JAR
 ```bash
-# Build JAR with dependencies
+# Build JAR with dependencies (using wrapper)
+.\mvnw.cmd clean package    # Windows
+./mvnw clean package       # macOS/Linux
+
+# Or with installed Maven
 mvn clean package
 
 # Run the standalone JAR
