@@ -33,6 +33,15 @@
                   <MenuItem fx:id="searchMessagesMenuItem" mnemonicParsing="false" onAction="#onSearchMessages" text="Search Messages..." />
                </items>
             </Menu>
+            <Menu mnemonicParsing="false" text="Admin">
+               <items>
+                  <MenuItem fx:id="consumerGroupsMenuItem" mnemonicParsing="false" onAction="#onConsumerGroups" text="Consumer Groups..." />
+                  <MenuItem fx:id="brokersMenuItem" mnemonicParsing="false" onAction="#onBrokers" text="Brokers..." />
+                  <SeparatorMenuItem />
+                  <MenuItem fx:id="clusterConfigMenuItem" mnemonicParsing="false" onAction="#onClusterConfig" text="Cluster Configuration..." />
+                  <MenuItem fx:id="brokerConfigMenuItem" mnemonicParsing="false" onAction="#onBrokerConfig" text="Broker Configuration..." />
+               </items>
+            </Menu>
             <Menu mnemonicParsing="false" text="Help">
                <items>
                   <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" onAction="#onAbout" text="About" />

@@ -1,8 +1,6 @@
 package com.kafkatool.controller;
 
-import com.kafkatool.model.ClusterInfo;
-import com.kafkatool.model.KafkaMessage;
-import com.kafkatool.model.TopicInfo;
+import com.kafkatool.model.*;
 import com.kafkatool.service.KafkaService;
 import com.kafkatool.service.KafkaServiceImpl;
 import com.kafkatool.util.DialogHelper;
@@ -16,8 +14,11 @@ import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +62,10 @@ public class MainController implements Initializable {
     @FXML private MenuItem refreshTopicsMenuItem;
     @FXML private MenuItem produceMessageMenuItem;
     @FXML private MenuItem searchMessagesMenuItem;
+    @FXML private MenuItem consumerGroupsMenuItem;
+    @FXML private MenuItem brokersMenuItem;
+    @FXML private MenuItem clusterConfigMenuItem;
+    @FXML private MenuItem brokerConfigMenuItem;
     @FXML private MenuItem aboutMenuItem;
     
     // FXML Controls - Left Panel
@@ -286,6 +291,27 @@ public class MainController implements Initializable {
         
         searchMessagesMenuItem.disableProperty().bind(
             Bindings.isNull(topicsListView.getSelectionModel().selectedItemProperty())
+        );
+        
+        // Admin menu items - enabled only when connected to a cluster
+        consumerGroupsMenuItem.disableProperty().bind(
+            Bindings.isNull(clustersListView.getSelectionModel().selectedItemProperty())
+                .or(Bindings.notEqual(clustersListView.getSelectionModel().selectedItemProperty().asString(), "Connected"))
+        );
+        
+        brokersMenuItem.disableProperty().bind(
+            Bindings.isNull(clustersListView.getSelectionModel().selectedItemProperty())
+                .or(Bindings.notEqual(clustersListView.getSelectionModel().selectedItemProperty().asString(), "Connected"))
+        );
+        
+        clusterConfigMenuItem.disableProperty().bind(
+            Bindings.isNull(clustersListView.getSelectionModel().selectedItemProperty())
+                .or(Bindings.notEqual(clustersListView.getSelectionModel().selectedItemProperty().asString(), "Connected"))
+        );
+        
+        brokerConfigMenuItem.disableProperty().bind(
+            Bindings.isNull(clustersListView.getSelectionModel().selectedItemProperty())
+                .or(Bindings.notEqual(clustersListView.getSelectionModel().selectedItemProperty().asString(), "Connected"))
         );
     }
     
@@ -754,6 +780,216 @@ public class MainController implements Initializable {
     @FXML
     private void onExit() {
         Platform.exit();
+    }
+    
+    @FXML
+    private void onConsumerGroups() {
+        if (currentCluster == null || !"Connected".equals(currentCluster.getStatus())) {
+            DialogHelper.showErrorDialog("No Connected Cluster", "Connection Required", "Please connect to a cluster first.");
+            return;
+        }
+        
+        // Simple implementation for now - show consumer groups in a basic dialog
+        showSimpleConsumerGroupsDialog();
+    }
+    
+    @FXML
+    private void onBrokers() {
+        if (currentCluster == null || !"Connected".equals(currentCluster.getStatus())) {
+            DialogHelper.showErrorDialog("No Connected Cluster", "Connection Required", "Please connect to a cluster first.");
+            return;
+        }
+        
+        showSimpleBrokersDialog();
+    }
+    
+    @FXML
+    private void onClusterConfig() {
+        if (currentCluster == null || !"Connected".equals(currentCluster.getStatus())) {
+            DialogHelper.showErrorDialog("No Connected Cluster", "Connection Required", "Please connect to a cluster first.");
+            return;
+        }
+        
+        showSimpleClusterConfigDialog();
+    }
+    
+    @FXML
+    private void onBrokerConfig() {
+        if (currentCluster == null || !"Connected".equals(currentCluster.getStatus())) {
+            DialogHelper.showErrorDialog("No Connected Cluster", "Connection Required", "Please connect to a cluster first.");
+            return;
+        }
+        
+        showSimpleBrokerConfigDialog();
+    }
+    
+    // ===== SIMPLIFIED ADMIN DIALOG METHODS =====
+    
+    private void showSimpleConsumerGroupsDialog() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Consumer Groups - " + currentCluster.getName());
+        dialog.setHeaderText("Consumer Groups in Cluster");
+        
+        TableView<ConsumerGroupInfo> table = new TableView<>();
+        
+        TableColumn<ConsumerGroupInfo, String> groupIdCol = new TableColumn<>("Group ID");
+        groupIdCol.setCellValueFactory(new PropertyValueFactory<>("groupId"));
+        groupIdCol.setPrefWidth(200);
+        
+        TableColumn<ConsumerGroupInfo, String> stateCol = new TableColumn<>("State");
+        stateCol.setCellValueFactory(new PropertyValueFactory<>("state"));
+        stateCol.setPrefWidth(100);
+        
+        TableColumn<ConsumerGroupInfo, Integer> membersCol = new TableColumn<>("Members");
+        membersCol.setCellValueFactory(new PropertyValueFactory<>("memberCount"));
+        membersCol.setPrefWidth(80);
+        
+        table.getColumns().addAll(groupIdCol, stateCol, membersCol);
+        table.setPrefHeight(400);
+        
+        // Load data
+        kafkaService.getConsumerGroupsAsync(currentCluster.getBrokerUrls())
+            .thenAccept(groups -> Platform.runLater(() -> table.getItems().setAll(groups)))
+            .exceptionally(ex -> {
+                Platform.runLater(() -> DialogHelper.showErrorDialog("Load Error", "Failed to load consumer groups", ex.getMessage()));
+                return null;
+            });
+        
+        dialog.getDialogPane().setContent(table);
+        dialog.getDialogPane().setPrefSize(500, 500);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.show();
+    }
+    
+    private void showSimpleBrokersDialog() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Brokers - " + currentCluster.getName());
+        dialog.setHeaderText("Cluster Brokers");
+        
+        TableView<BrokerInfo> table = new TableView<>();
+        
+        TableColumn<BrokerInfo, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+        idCol.setPrefWidth(60);
+        
+        TableColumn<BrokerInfo, String> hostCol = new TableColumn<>("Host");
+        hostCol.setCellValueFactory(new PropertyValueFactory<>("host"));
+        hostCol.setPrefWidth(150);
+        
+        TableColumn<BrokerInfo, Integer> portCol = new TableColumn<>("Port");
+        portCol.setCellValueFactory(new PropertyValueFactory<>("port"));
+        portCol.setPrefWidth(80);
+        
+        TableColumn<BrokerInfo, Boolean> controllerCol = new TableColumn<>("Controller");
+        controllerCol.setCellValueFactory(new PropertyValueFactory<>("controller"));
+        controllerCol.setPrefWidth(80);
+        
+        table.getColumns().addAll(idCol, hostCol, portCol, controllerCol);
+        table.setPrefHeight(300);
+        
+        // Load data
+        kafkaService.getBrokersAsync(currentCluster.getBrokerUrls())
+            .thenAccept(brokers -> Platform.runLater(() -> table.getItems().setAll(brokers)))
+            .exceptionally(ex -> {
+                Platform.runLater(() -> DialogHelper.showErrorDialog("Load Error", "Failed to load brokers", ex.getMessage()));
+                return null;
+            });
+        
+        dialog.getDialogPane().setContent(table);
+        dialog.getDialogPane().setPrefSize(400, 400);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.show();
+    }
+    
+    private void showSimpleClusterConfigDialog() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Cluster Configuration - " + currentCluster.getName());
+        dialog.setHeaderText("Cluster Configuration Properties");
+        
+        TableView<ClusterConfig> table = new TableView<>();
+        
+        TableColumn<ClusterConfig, String> nameCol = new TableColumn<>("Property");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        nameCol.setPrefWidth(250);
+        
+        TableColumn<ClusterConfig, String> valueCol = new TableColumn<>("Value");
+        valueCol.setCellValueFactory(new PropertyValueFactory<>("value"));
+        valueCol.setPrefWidth(200);
+        
+        table.getColumns().addAll(nameCol, valueCol);
+        table.setPrefHeight(500);
+        
+        // Load data
+        kafkaService.getClusterConfigAsync(currentCluster.getBrokerUrls())
+            .thenAccept(configs -> Platform.runLater(() -> table.getItems().setAll(configs)))
+            .exceptionally(ex -> {
+                Platform.runLater(() -> DialogHelper.showErrorDialog("Load Error", "Failed to load cluster config", ex.getMessage()));
+                return null;
+            });
+        
+        dialog.getDialogPane().setContent(table);
+        dialog.getDialogPane().setPrefSize(500, 600);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.show();
+    }
+    
+    private void showSimpleBrokerConfigDialog() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Broker Configuration - " + currentCluster.getName());
+        dialog.setHeaderText("Select a broker to view its configuration");
+        
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        
+        ComboBox<Integer> brokerCombo = new ComboBox<>();
+        Button loadBtn = new Button("Load Configuration");
+        
+        TableView<ClusterConfig> table = new TableView<>();
+        TableColumn<ClusterConfig, String> nameCol = new TableColumn<>("Property");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        nameCol.setPrefWidth(250);
+        
+        TableColumn<ClusterConfig, String> valueCol = new TableColumn<>("Value");
+        valueCol.setCellValueFactory(new PropertyValueFactory<>("value"));
+        valueCol.setPrefWidth(200);
+        
+        table.getColumns().addAll(nameCol, valueCol);
+        table.setPrefHeight(400);
+        
+        HBox controls = new HBox(10);
+        controls.getChildren().addAll(new Label("Broker ID:"), brokerCombo, loadBtn);
+        
+        content.getChildren().addAll(controls, table);
+        
+        // Load broker IDs
+        kafkaService.getBrokersAsync(currentCluster.getBrokerUrls())
+            .thenAccept(brokers -> Platform.runLater(() -> {
+                brokerCombo.getItems().setAll(brokers.stream().map(BrokerInfo::getId).toList());
+                if (!brokers.isEmpty()) {
+                    brokerCombo.setValue(brokers.get(0).getId());
+                }
+            }))
+            .exceptionally(ex -> {
+                Platform.runLater(() -> DialogHelper.showErrorDialog("Load Error", "Failed to load brokers", ex.getMessage()));
+                return null;
+            });
+        
+        loadBtn.setOnAction(e -> {
+            Integer brokerId = brokerCombo.getValue();
+            if (brokerId != null) {
+                kafkaService.getBrokerConfigAsync(currentCluster.getBrokerUrls(), brokerId)
+                    .thenAccept(configs -> Platform.runLater(() -> table.getItems().setAll(configs)))
+                    .exceptionally(ex -> {
+                        Platform.runLater(() -> DialogHelper.showErrorDialog("Load Error", "Failed to load broker config", ex.getMessage()));
+                        return null;
+                    });
+            }
+        });
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefSize(500, 550);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.show();
     }
     
     private void updateMessageDetails(KafkaMessage message) {
