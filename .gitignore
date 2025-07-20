@@ -33,3 +33,6 @@ kafka-ui-java/*.iws
 
 # Application logs
 .kafka-ui-tool/
+
+# Build and release outputs
+release/

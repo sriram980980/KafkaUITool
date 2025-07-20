@@ -51,6 +51,37 @@ release.bat
 - Internet connection (for Maven dependencies)
 - Windows 10+ (for PowerShell ZIP creation)
 
+### 3. release.ps1 - PowerShell Release Script
+
+**Purpose**: Same as release.bat but with enhanced PowerShell features.
+
+**Features**:
+- Colored output for better readability
+- Enhanced error handling and validation
+- Cleaner progress reporting
+
+**Usage**:
+```powershell
+.\release.ps1
+```
+
+### 4. test-build-scripts.bat - Build Environment Test
+
+**Purpose**: Validates that the build environment is properly configured.
+
+**What it tests**:
+- Java 17+ availability
+- jpackage availability (for release scripts)
+- Maven wrapper functionality
+- Compilation process
+- JAR packaging
+- JAR content validation
+
+**Usage**:
+```cmd
+test-build-scripts.bat
+```
+
 ## Benefits of the Windows Executable
 
 The Windows executable created by `release.bat` includes:
@@ -63,6 +94,15 @@ The Windows executable created by `release.bat` includes:
 6. **Uninstall Support**: Standard Windows Add/Remove Programs integration
 
 ## Usage Examples
+
+### First Time Setup
+```cmd
+# Test your environment first
+test-build-scripts.bat
+
+# If tests pass, proceed with development
+build.bat
+```
 
 ### For Developers
 ```cmd
@@ -78,6 +118,9 @@ java -jar target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar
 ```cmd
 # Create full release packages
 release.bat
+
+# Or use PowerShell version for better output
+release.ps1
 
 # Distribute the files from the release\ directory
 # - KafkaUITool-2.0.0.exe for end users (no Java required)
