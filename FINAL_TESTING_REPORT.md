@@ -145,10 +145,6 @@ The chat section has been seamlessly integrated into the existing JavaFX archite
 - ✅ Responsive UI components
 - ✅ Minimal JAR size increase
 
-## 📸 Screenshot Documentation
-
-*Note: Due to the headless GitHub Actions environment, direct UI screenshots cannot be captured during automated testing. However, the UI implementation has been thoroughly validated through code analysis and component verification.*
-
 The chat section provides:
 1. **Message Display**: Timestamped conversation history
 2. **Input Controls**: Text field with Enter key support + Send button  
