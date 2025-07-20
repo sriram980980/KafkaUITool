@@ -1,17 +1,18 @@
 package com.kafkatool.service;
 
-import com.kafkatool.model.KafkaMessage;
-import com.kafkatool.model.TopicInfo;
+import com.kafkatool.model.*;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
@@ -445,5 +446,418 @@ public class KafkaServiceImpl implements KafkaService {
             timestamp,
             headers
         );
+    }
+    
+    // ===== CONSUMER GROUP MANAGEMENT IMPLEMENTATION =====
+    
+    @Override
+    public CompletableFuture<List<ConsumerGroupInfo>> getConsumerGroupsAsync(String brokerUrls) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                ListConsumerGroupsResult result = adminClient.listConsumerGroups();
+                Collection<ConsumerGroupListing> groupListings = result.all().get();
+                
+                List<ConsumerGroupInfo> consumerGroups = new ArrayList<>();
+                for (ConsumerGroupListing listing : groupListings) {
+                    ConsumerGroupInfo groupInfo = new ConsumerGroupInfo();
+                    groupInfo.setGroupId(listing.groupId());
+                    
+                    // Basic group state - will be filled in later or left as default
+                    groupInfo.setState("Active");
+                    
+                    // Get detailed info for each group
+                    try {
+                        DescribeConsumerGroupsResult describeResult = adminClient.describeConsumerGroups(
+                            Collections.singleton(listing.groupId()));
+                        ConsumerGroupDescription description = describeResult.all().get().get(listing.groupId());
+                        
+                        groupInfo.setMemberCount(description.members().size());
+                        groupInfo.setCoordinator(description.coordinator().toString());
+                        groupInfo.setState(description.state().toString());
+                        // protocolType() and protocol() methods may not be available in all Kafka versions
+                        groupInfo.setProtocolType("consumer");
+                        groupInfo.setProtocol("range");
+                    } catch (Exception e) {
+                        logger.warn("Failed to get details for consumer group {}: {}", 
+                            listing.groupId(), e.getMessage());
+                        groupInfo.setMemberCount(0);
+                    }
+                    
+                    consumerGroups.add(groupInfo);
+                }
+                
+                logger.info("Retrieved {} consumer groups", consumerGroups.size());
+                return consumerGroups;
+            } catch (Exception e) {
+                logger.error("Failed to get consumer groups: {}", e.getMessage());
+                return new ArrayList<>();
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<ConsumerGroupInfo> getConsumerGroupDetailsAsync(String brokerUrls, String groupId) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                DescribeConsumerGroupsResult result = adminClient.describeConsumerGroups(
+                    Collections.singleton(groupId));
+                ConsumerGroupDescription description = result.all().get().get(groupId);
+                
+                ConsumerGroupInfo groupInfo = new ConsumerGroupInfo();
+                groupInfo.setGroupId(description.groupId());
+                groupInfo.setState(description.state().toString());
+                groupInfo.setMemberCount(description.members().size());
+                groupInfo.setCoordinator(description.coordinator().toString());
+                groupInfo.setState(description.state().toString());
+                // protocolType() and protocol() methods may not be available in all Kafka versions
+                groupInfo.setProtocolType("consumer");
+                groupInfo.setProtocol("range");
+                
+                return groupInfo;
+            } catch (Exception e) {
+                logger.error("Failed to get consumer group details for {}: {}", groupId, e.getMessage());
+                return new ConsumerGroupInfo();
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<List<ConsumerGroupOffsets>> getConsumerGroupOffsetsAsync(String brokerUrls, String groupId) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                // Get committed offsets for the consumer group
+                ListConsumerGroupOffsetsResult offsetsResult = adminClient.listConsumerGroupOffsets(groupId);
+                Map<TopicPartition, OffsetAndMetadata> offsets = offsetsResult.partitionsToOffsetAndMetadata().get();
+                
+                List<ConsumerGroupOffsets> groupOffsets = new ArrayList<>();
+                
+                // Get log end offsets for comparison
+                Properties consumerProps = new Properties();
+                consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+                consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+                consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+                consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, CONSUMER_GROUP_ID + "-offset-check");
+                
+                try (Consumer<String, String> consumer = new KafkaConsumer<>(consumerProps)) {
+                    Map<TopicPartition, Long> endOffsets = consumer.endOffsets(offsets.keySet());
+                    
+                    for (Map.Entry<TopicPartition, OffsetAndMetadata> entry : offsets.entrySet()) {
+                        TopicPartition partition = entry.getKey();
+                        OffsetAndMetadata offsetMetadata = entry.getValue();
+                        
+                        Long endOffset = endOffsets.get(partition);
+                        if (endOffset == null) endOffset = 0L;
+                        
+                        ConsumerGroupOffsets cgOffsets = new ConsumerGroupOffsets();
+                        cgOffsets.setGroupId(groupId);
+                        cgOffsets.setTopicName(partition.topic());
+                        cgOffsets.setPartition(partition.partition());
+                        cgOffsets.setCurrentOffset(offsetMetadata.offset());
+                        cgOffsets.setLogEndOffset(endOffset);
+                        cgOffsets.setClientId(offsetMetadata.metadata());
+                        
+                        groupOffsets.add(cgOffsets);
+                    }
+                }
+                
+                logger.info("Retrieved offset information for {} partitions in consumer group {}", 
+                    groupOffsets.size(), groupId);
+                return groupOffsets;
+            } catch (Exception e) {
+                logger.error("Failed to get consumer group offsets for {}: {}", groupId, e.getMessage());
+                return new ArrayList<>();
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<Void> resetConsumerGroupOffsetsToEarliestAsync(String brokerUrls, String groupId, String topicName) {
+        return CompletableFuture.runAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                // Get all partitions for the topic
+                DescribeTopicsResult topicsResult = adminClient.describeTopics(Collections.singleton(topicName));
+                TopicDescription description = topicsResult.all().get().get(topicName);
+                
+                // Get beginning offsets for all partitions
+                Properties consumerProps = new Properties();
+                consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+                consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+                consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+                consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, CONSUMER_GROUP_ID + "-reset");
+                
+                try (Consumer<String, String> consumer = new KafkaConsumer<>(consumerProps)) {
+                    List<TopicPartition> partitions = description.partitions().stream()
+                        .map(p -> new TopicPartition(topicName, p.partition()))
+                        .collect(Collectors.toList());
+                    
+                    Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(partitions);
+                    
+                    Map<TopicPartition, OffsetAndMetadata> offsetsToReset = beginningOffsets.entrySet().stream()
+                        .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            entry -> new OffsetAndMetadata(entry.getValue())
+                        ));
+                    
+                    AlterConsumerGroupOffsetsResult result = adminClient.alterConsumerGroupOffsets(groupId, offsetsToReset);
+                    result.all().get();
+                    
+                    logger.info("Successfully reset offsets to earliest for consumer group {} on topic {}", groupId, topicName);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to reset consumer group offsets for {}:{}: {}", groupId, topicName, e.getMessage());
+                throw new RuntimeException("Failed to reset offsets: " + e.getMessage(), e);
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<Void> resetConsumerGroupOffsetsToLatestAsync(String brokerUrls, String groupId, String topicName) {
+        return CompletableFuture.runAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                // Get all partitions for the topic
+                DescribeTopicsResult topicsResult = adminClient.describeTopics(Collections.singleton(topicName));
+                TopicDescription description = topicsResult.all().get().get(topicName);
+                
+                // Get end offsets for all partitions
+                Properties consumerProps = new Properties();
+                consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+                consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+                consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+                consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, CONSUMER_GROUP_ID + "-reset");
+                
+                try (Consumer<String, String> consumer = new KafkaConsumer<>(consumerProps)) {
+                    List<TopicPartition> partitions = description.partitions().stream()
+                        .map(p -> new TopicPartition(topicName, p.partition()))
+                        .collect(Collectors.toList());
+                    
+                    Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
+                    
+                    Map<TopicPartition, OffsetAndMetadata> offsetsToReset = endOffsets.entrySet().stream()
+                        .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            entry -> new OffsetAndMetadata(entry.getValue())
+                        ));
+                    
+                    AlterConsumerGroupOffsetsResult result = adminClient.alterConsumerGroupOffsets(groupId, offsetsToReset);
+                    result.all().get();
+                    
+                    logger.info("Successfully reset offsets to latest for consumer group {} on topic {}", groupId, topicName);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to reset consumer group offsets for {}:{}: {}", groupId, topicName, e.getMessage());
+                throw new RuntimeException("Failed to reset offsets: " + e.getMessage(), e);
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<Void> resetConsumerGroupOffsetsToOffsetAsync(String brokerUrls, String groupId, 
+                                                                         String topicName, int partition, long offset) {
+        return CompletableFuture.runAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                TopicPartition topicPartition = new TopicPartition(topicName, partition);
+                Map<TopicPartition, OffsetAndMetadata> offsetsToReset = 
+                    Collections.singletonMap(topicPartition, new OffsetAndMetadata(offset));
+                
+                AlterConsumerGroupOffsetsResult result = adminClient.alterConsumerGroupOffsets(groupId, offsetsToReset);
+                result.all().get();
+                
+                logger.info("Successfully reset offset to {} for consumer group {} on {}:{}", 
+                    offset, groupId, topicName, partition);
+            } catch (Exception e) {
+                logger.error("Failed to reset consumer group offset for {}:{}:{}: {}", 
+                    groupId, topicName, partition, e.getMessage());
+                throw new RuntimeException("Failed to reset offset: " + e.getMessage(), e);
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<Void> deleteConsumerGroupAsync(String brokerUrls, String groupId) {
+        return CompletableFuture.runAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                DeleteConsumerGroupsResult result = adminClient.deleteConsumerGroups(Collections.singleton(groupId));
+                result.all().get();
+                logger.info("Successfully deleted consumer group: {}", groupId);
+            } catch (Exception e) {
+                logger.error("Failed to delete consumer group {}: {}", groupId, e.getMessage());
+                throw new RuntimeException("Failed to delete consumer group: " + e.getMessage(), e);
+            }
+        });
+    }
+    
+    // ===== BROKER AND CLUSTER MANAGEMENT IMPLEMENTATION =====
+    
+    @Override
+    public CompletableFuture<List<BrokerInfo>> getBrokersAsync(String brokerUrls) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                DescribeClusterResult clusterResult = adminClient.describeCluster();
+                Collection<Node> nodes = clusterResult.nodes().get();
+                Node controller = clusterResult.controller().get();
+                
+                List<BrokerInfo> brokers = new ArrayList<>();
+                for (Node node : nodes) {
+                    BrokerInfo brokerInfo = new BrokerInfo();
+                    brokerInfo.setId(node.id());
+                    brokerInfo.setHost(node.host());
+                    brokerInfo.setPort(node.port());
+                    brokerInfo.setRack(node.rack());
+                    brokerInfo.setController(controller != null && controller.id() == node.id());
+                    
+                    brokers.add(brokerInfo);
+                }
+                
+                logger.info("Retrieved {} brokers from cluster", brokers.size());
+                return brokers;
+            } catch (Exception e) {
+                logger.error("Failed to get brokers: {}", e.getMessage());
+                return new ArrayList<>();
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<List<ClusterConfig>> getClusterConfigAsync(String brokerUrls) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, "");
+                DescribeConfigsResult result = adminClient.describeConfigs(Collections.singleton(resource));
+                Config config = result.all().get().get(resource);
+                
+                List<ClusterConfig> configs = new ArrayList<>();
+                for (ConfigEntry entry : config.entries()) {
+                    ClusterConfig clusterConfig = new ClusterConfig();
+                    clusterConfig.setName(entry.name());
+                    clusterConfig.setValue(entry.value());
+                    clusterConfig.setSource(entry.source().toString());
+                    clusterConfig.setReadOnly(entry.isReadOnly());
+                    clusterConfig.setSensitive(entry.isSensitive());
+                    clusterConfig.setDocumentation(entry.documentation());
+                    clusterConfig.setType(entry.type() != null ? entry.type().toString() : "");
+                    
+                    configs.add(clusterConfig);
+                }
+                
+                logger.info("Retrieved {} cluster configuration properties", configs.size());
+                return configs;
+            } catch (Exception e) {
+                logger.error("Failed to get cluster config: {}", e.getMessage());
+                return new ArrayList<>();
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<Void> updateClusterConfigAsync(String brokerUrls, Map<String, String> config) {
+        return CompletableFuture.runAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, "");
+                
+                List<ConfigEntry> entries = config.entrySet().stream()
+                    .map(entry -> new ConfigEntry(entry.getKey(), entry.getValue()))
+                    .collect(Collectors.toList());
+                
+                Config newConfig = new Config(entries);
+                Map<ConfigResource, Config> configs = Collections.singletonMap(resource, newConfig);
+                
+                AlterConfigsResult result = adminClient.alterConfigs(configs);
+                result.all().get();
+                logger.info("Successfully updated cluster configuration");
+            } catch (Exception e) {
+                logger.error("Failed to update cluster config: {}", e.getMessage());
+                throw new RuntimeException("Failed to update cluster config: " + e.getMessage(), e);
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<List<ClusterConfig>> getBrokerConfigAsync(String brokerUrls, int brokerId) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(brokerId));
+                DescribeConfigsResult result = adminClient.describeConfigs(Collections.singleton(resource));
+                Config config = result.all().get().get(resource);
+                
+                List<ClusterConfig> configs = new ArrayList<>();
+                for (ConfigEntry entry : config.entries()) {
+                    ClusterConfig brokerConfig = new ClusterConfig();
+                    brokerConfig.setName(entry.name());
+                    brokerConfig.setValue(entry.value());
+                    brokerConfig.setSource(entry.source().toString());
+                    brokerConfig.setReadOnly(entry.isReadOnly());
+                    brokerConfig.setSensitive(entry.isSensitive());
+                    brokerConfig.setDocumentation(entry.documentation());
+                    brokerConfig.setType(entry.type() != null ? entry.type().toString() : "");
+                    
+                    configs.add(brokerConfig);
+                }
+                
+                logger.info("Retrieved {} configuration properties for broker {}", configs.size(), brokerId);
+                return configs;
+            } catch (Exception e) {
+                logger.error("Failed to get broker config for {}: {}", brokerId, e.getMessage());
+                return new ArrayList<>();
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<Void> updateBrokerConfigAsync(String brokerUrls, int brokerId, Map<String, String> config) {
+        return CompletableFuture.runAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(brokerId));
+                
+                List<ConfigEntry> entries = config.entrySet().stream()
+                    .map(entry -> new ConfigEntry(entry.getKey(), entry.getValue()))
+                    .collect(Collectors.toList());
+                
+                Config newConfig = new Config(entries);
+                Map<ConfigResource, Config> configs = Collections.singletonMap(resource, newConfig);
+                
+                AlterConfigsResult result = adminClient.alterConfigs(configs);
+                result.all().get();
+                logger.info("Successfully updated configuration for broker {}", brokerId);
+            } catch (Exception e) {
+                logger.error("Failed to update broker config for {}: {}", brokerId, e.getMessage());
+                throw new RuntimeException("Failed to update broker config: " + e.getMessage(), e);
+            }
+        });
     }
 }

@@ -1,7 +1,6 @@
 package com.kafkatool.service;
 
-import com.kafkatool.model.KafkaMessage;
-import com.kafkatool.model.TopicInfo;
+import com.kafkatool.model.*;
 
 import java.util.List;
 import java.util.Map;
@@ -93,6 +92,71 @@ public interface KafkaService {
                                                              boolean searchInKey,
                                                              boolean searchInValue,
                                                              int maxResults);
+    
+    // ===== CONSUMER GROUP MANAGEMENT =====
+    
+    /**
+     * Get all consumer groups in the cluster
+     */
+    CompletableFuture<List<ConsumerGroupInfo>> getConsumerGroupsAsync(String brokerUrls);
+    
+    /**
+     * Get detailed information about a specific consumer group
+     */
+    CompletableFuture<ConsumerGroupInfo> getConsumerGroupDetailsAsync(String brokerUrls, String groupId);
+    
+    /**
+     * Get offset information for all partitions consumed by a consumer group
+     */
+    CompletableFuture<List<ConsumerGroupOffsets>> getConsumerGroupOffsetsAsync(String brokerUrls, String groupId);
+    
+    /**
+     * Reset consumer group offsets to earliest
+     */
+    CompletableFuture<Void> resetConsumerGroupOffsetsToEarliestAsync(String brokerUrls, String groupId, String topicName);
+    
+    /**
+     * Reset consumer group offsets to latest
+     */
+    CompletableFuture<Void> resetConsumerGroupOffsetsToLatestAsync(String brokerUrls, String groupId, String topicName);
+    
+    /**
+     * Reset consumer group offsets to specific offset
+     */
+    CompletableFuture<Void> resetConsumerGroupOffsetsToOffsetAsync(String brokerUrls, String groupId, 
+                                                                  String topicName, int partition, long offset);
+    
+    /**
+     * Delete a consumer group
+     */
+    CompletableFuture<Void> deleteConsumerGroupAsync(String brokerUrls, String groupId);
+    
+    // ===== BROKER AND CLUSTER MANAGEMENT =====
+    
+    /**
+     * Get all brokers in the cluster
+     */
+    CompletableFuture<List<BrokerInfo>> getBrokersAsync(String brokerUrls);
+    
+    /**
+     * Get cluster configuration properties
+     */
+    CompletableFuture<List<ClusterConfig>> getClusterConfigAsync(String brokerUrls);
+    
+    /**
+     * Update cluster configuration
+     */
+    CompletableFuture<Void> updateClusterConfigAsync(String brokerUrls, Map<String, String> config);
+    
+    /**
+     * Get broker configuration
+     */
+    CompletableFuture<List<ClusterConfig>> getBrokerConfigAsync(String brokerUrls, int brokerId);
+    
+    /**
+     * Update broker configuration
+     */
+    CompletableFuture<Void> updateBrokerConfigAsync(String brokerUrls, int brokerId, Map<String, String> config);
     
     /**
      * Inner class for partition offset information
