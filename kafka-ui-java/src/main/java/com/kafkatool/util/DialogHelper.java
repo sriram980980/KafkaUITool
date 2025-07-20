@@ -319,6 +319,17 @@ public class DialogHelper {
     }
     
     /**
+     * Show information dialog
+     */
+    public static void showInfoDialog(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+    
+    /**
      * Show settings dialog (simplified)
      */
     public static void showSettingsDialog() {

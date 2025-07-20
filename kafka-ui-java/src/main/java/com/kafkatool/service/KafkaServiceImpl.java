@@ -148,6 +148,26 @@ public class KafkaServiceImpl implements KafkaService {
     }
     
     @Override
+    public CompletableFuture<Void> addPartitionsToTopicAsync(String brokerUrls, String topicName, int newPartitionCount) {
+        return CompletableFuture.runAsync(() -> {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                Map<String, NewPartitions> partitionsMap = new HashMap<>();
+                partitionsMap.put(topicName, NewPartitions.increaseTo(newPartitionCount));
+                
+                CreatePartitionsResult result = adminClient.createPartitions(partitionsMap);
+                result.all().get();
+                logger.info("Successfully added partitions to topic {}: new count = {}", topicName, newPartitionCount);
+            } catch (Exception e) {
+                logger.error("Failed to add partitions to topic {}: {}", topicName, e.getMessage());
+                throw new RuntimeException("Failed to add partitions to topic: " + e.getMessage(), e);
+            }
+        });
+    }
+    
+    @Override
     public CompletableFuture<Map<String, String>> getTopicConfigAsync(String brokerUrls, String topicName) {
         return CompletableFuture.supplyAsync(() -> {
             Properties props = new Properties();

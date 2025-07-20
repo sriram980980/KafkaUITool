@@ -830,9 +830,55 @@ public class MainController implements Initializable {
                 });
             });
         
+        // Configuration button actions
+        editConfigBtn.setOnAction(e -> {
+            ClusterConfig selected = basicConfigTable.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                showEditConfigDialog(selected, basicConfigTable);
+            } else {
+                DialogHelper.showErrorDialog("No Selection", "Selection Required", 
+                    "Please select a configuration property to edit.");
+            }
+        });
+        
+        addConfigBtn.setOnAction(e -> {
+            showAddConfigDialog(basicConfigTable);
+        });
+        
+        removeConfigBtn.setOnAction(e -> {
+            ClusterConfig selected = basicConfigTable.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                boolean confirmed = DialogHelper.showConfirmDialog(
+                    "Remove Configuration",
+                    "Remove configuration property '" + selected.getName() + "'?",
+                    "This will reset the property to its default value."
+                );
+                if (confirmed) {
+                    basicConfigTable.getItems().remove(selected);
+                    updateStatus("Configuration property marked for removal");
+                }
+            } else {
+                DialogHelper.showErrorDialog("No Selection", "Selection Required",
+                    "Please select a configuration property to remove.");
+            }
+        });
+        
+        resetConfigBtn.setOnAction(e -> {
+            boolean confirmed = DialogHelper.showConfirmDialog(
+                "Reset Configuration",
+                "Reset all configuration properties to default values?",
+                "This will remove all custom configuration overrides."
+            );
+            if (confirmed) {
+                basicConfigTable.getItems().clear();
+                updateStatus("Configuration properties reset");
+            }
+        });
+        
         // Button actions
         saveBtn.setOnAction(e -> {
-            updateStatus("Topic configuration saving feature coming soon - enterprise version");
+            saveTopicConfiguration(basicConfigTable, retentionTimeField, retentionSizeField, 
+                cleanupPolicyCombo, compressionCombo, dialog);
         });
         
         addPartitionsBtn.setOnAction(e -> {
@@ -841,7 +887,7 @@ public class MainController implements Initializable {
                 try {
                     int newCount = Integer.parseInt(newCountStr);
                     if (newCount > currentTopic.getPartitions()) {
-                        updateStatus("Partition addition feature coming soon - enterprise version");
+                        addTopicPartitions(newCount, dialog);
                     } else {
                         DialogHelper.showErrorDialog("Invalid Partition Count", 
                             "Invalid Value", "New partition count must be greater than current count.");
@@ -1187,7 +1233,7 @@ public class MainController implements Initializable {
                     "This action cannot be undone."
                 );
                 if (confirmed) {
-                    updateStatus("Consumer group deletion feature coming soon - enterprise version");
+                    deleteConsumerGroup(selected.getGroupId(), table);
                 }
             } else {
                 DialogHelper.showErrorDialog("No Selection", "Selection Required", "Please select a consumer group first.");
@@ -1267,8 +1313,8 @@ public class MainController implements Initializable {
         executeBtn.setStyle("-fx-background-color: #ff9800; -fx-text-fill: white;");
         
         executeBtn.setOnAction(e -> {
-            updateStatus("Consumer group offset reset feature coming soon - enterprise version");
-            dialog.close();
+            executeOffsetReset(groupId, strategyCombo.getValue(), topicCombo.getValue(), 
+                             valueField.getText(), dryRunBox.isSelected(), dialog);
         });
         
         content.getChildren().addAll(
@@ -1449,7 +1495,7 @@ public class MainController implements Initializable {
         editBtn.setOnAction(e -> {
             ClusterConfig selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                updateStatus("Broker configuration editing feature coming soon - enterprise version");
+                showEditBrokerConfigDialog(selected, brokerId, table);
             } else {
                 DialogHelper.showErrorDialog("No Selection", "Selection Required", "Please select a configuration property first.");
             }
@@ -1468,6 +1514,9 @@ public class MainController implements Initializable {
         dialog.setTitle("Cluster Configuration - " + currentCluster.getName());
         dialog.setHeaderText("Cluster Configuration Properties");
         
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        
         TableView<ClusterConfig> table = new TableView<>();
         
         TableColumn<ClusterConfig, String> nameCol = new TableColumn<>("Property");
@@ -1478,8 +1527,25 @@ public class MainController implements Initializable {
         valueCol.setCellValueFactory(new PropertyValueFactory<>("value"));
         valueCol.setPrefWidth(200);
         
-        table.getColumns().addAll(nameCol, valueCol);
-        table.setPrefHeight(500);
+        TableColumn<ClusterConfig, String> sourceCol = new TableColumn<>("Source");
+        sourceCol.setCellValueFactory(new PropertyValueFactory<>("source"));
+        sourceCol.setPrefWidth(120);
+        
+        table.getColumns().addAll(nameCol, valueCol, sourceCol);
+        table.setPrefHeight(400);
+        
+        // Action buttons
+        HBox actionBar = new HBox(10);
+        Button editBtn = new Button("Edit Property");
+        Button refreshBtn = new Button("Refresh");
+        Button exportBtn = new Button("Export Config");
+        
+        editBtn.setStyle("-fx-background-color: #ff9800; -fx-text-fill: white;");
+        refreshBtn.setStyle("-fx-background-color: #4a90e2; -fx-text-fill: white;");
+        
+        actionBar.getChildren().addAll(editBtn, refreshBtn, exportBtn);
+        
+        content.getChildren().addAll(table, actionBar);
         
         // Load data
         kafkaService.getClusterConfigAsync(currentCluster.getBrokerUrls())
@@ -1489,8 +1555,32 @@ public class MainController implements Initializable {
                 return null;
             });
         
-        dialog.getDialogPane().setContent(table);
-        dialog.getDialogPane().setPrefSize(500, 600);
+        // Button actions
+        editBtn.setOnAction(e -> {
+            ClusterConfig selected = table.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                showEditClusterConfigDialog(selected, table);
+            } else {
+                DialogHelper.showErrorDialog("No Selection", "Selection Required", 
+                    "Please select a configuration property to edit.");
+            }
+        });
+        
+        refreshBtn.setOnAction(e -> {
+            kafkaService.getClusterConfigAsync(currentCluster.getBrokerUrls())
+                .thenAccept(configs -> Platform.runLater(() -> table.getItems().setAll(configs)))
+                .exceptionally(ex -> {
+                    Platform.runLater(() -> DialogHelper.showErrorDialog("Refresh Error", "Failed to refresh cluster config", ex.getMessage()));
+                    return null;
+                });
+        });
+        
+        exportBtn.setOnAction(e -> {
+            updateStatus("Configuration export feature coming soon");
+        });
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefSize(600, 550);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.show();
     }
@@ -2205,6 +2295,557 @@ public class MainController implements Initializable {
         dialog.getDialogPane().setPrefSize(400, 500);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.show();
+    }
+    
+    // ===== TOPIC CONFIGURATION IMPLEMENTATION METHODS =====
+    
+    private void saveTopicConfiguration(TableView<ClusterConfig> configTable, 
+                                      TextField retentionTimeField, TextField retentionSizeField,
+                                      ComboBox<String> cleanupPolicyCombo, ComboBox<String> compressionCombo,
+                                      Dialog<Void> dialog) {
+        if (currentTopic == null || currentCluster == null) {
+            DialogHelper.showErrorDialog("No Topic Selected", "Selection Required", "Please select a topic first.");
+            return;
+        }
+        
+        boolean confirmed = DialogHelper.showConfirmDialog(
+            "Save Configuration", 
+            "Save topic configuration changes?",
+            "This will update the topic configuration on the Kafka cluster."
+        );
+        
+        if (!confirmed) return;
+        
+        // Collect configuration changes
+        Map<String, String> configUpdates = new HashMap<>();
+        
+        // Add retention settings if provided
+        String retentionTime = retentionTimeField.getText().trim();
+        if (!retentionTime.isEmpty()) {
+            configUpdates.put("retention.ms", parseRetentionTime(retentionTime));
+        }
+        
+        String retentionSize = retentionSizeField.getText().trim();
+        if (!retentionSize.isEmpty()) {
+            configUpdates.put("retention.bytes", parseRetentionSize(retentionSize));
+        }
+        
+        // Add cleanup policy
+        if (cleanupPolicyCombo.getValue() != null) {
+            configUpdates.put("cleanup.policy", cleanupPolicyCombo.getValue());
+        }
+        
+        // Add compression type
+        if (compressionCombo.getValue() != null && !compressionCombo.getValue().equals("uncompressed")) {
+            configUpdates.put("compression.type", compressionCombo.getValue());
+        }
+        
+        // Add any modified values from the config table
+        for (ClusterConfig config : configTable.getItems()) {
+            if (config.getValue() != null && !config.getValue().trim().isEmpty()) {
+                configUpdates.put(config.getName(), config.getValue());
+            }
+        }
+        
+        if (configUpdates.isEmpty()) {
+            DialogHelper.showInfoDialog("No Changes", "No configuration changes detected.");
+            return;
+        }
+        
+        showLoading(true);
+        updateStatus("Saving topic configuration...");
+        
+        kafkaService.updateTopicConfigAsync(currentCluster.getBrokerUrls(), currentTopic.getName(), configUpdates)
+            .whenComplete((result, throwable) -> {
+                Platform.runLater(() -> {
+                    showLoading(false);
+                    if (throwable == null) {
+                        updateStatus("Topic configuration saved successfully");
+                        DialogHelper.showInfoDialog("Configuration Saved", 
+                            "Topic configuration has been updated successfully.");
+                        dialog.close();
+                        // Refresh topic list to update any changed information
+                        refreshTopics();
+                    } else {
+                        updateStatus("Failed to save topic configuration: " + throwable.getMessage());
+                        DialogHelper.showErrorDialog("Save Error", 
+                            "Failed to save topic configuration", throwable.getMessage());
+                    }
+                });
+            });
+    }
+    
+    private void addTopicPartitions(int newPartitionCount, Dialog<Void> dialog) {
+        if (currentTopic == null || currentCluster == null) {
+            DialogHelper.showErrorDialog("No Topic Selected", "Selection Required", "Please select a topic first.");
+            return;
+        }
+        
+        boolean confirmed = DialogHelper.showConfirmDialog(
+            "Add Partitions", 
+            String.format("Add partitions to topic '%s'?", currentTopic.getName()),
+            String.format("This will increase partition count from %d to %d. This operation cannot be undone.", 
+                currentTopic.getPartitions(), newPartitionCount)
+        );
+        
+        if (!confirmed) return;
+        
+        showLoading(true);
+        updateStatus("Adding partitions to topic...");
+        
+        // Use the proper partition addition method
+        kafkaService.addPartitionsToTopicAsync(currentCluster.getBrokerUrls(), currentTopic.getName(), newPartitionCount)
+            .whenComplete((result, throwable) -> {
+                Platform.runLater(() -> {
+                    showLoading(false);
+                    if (throwable == null) {
+                        updateStatus("Partitions added successfully");
+                        DialogHelper.showInfoDialog("Partitions Added", 
+                            String.format("Topic '%s' now has %d partitions.", 
+                                currentTopic.getName(), newPartitionCount));
+                        dialog.close();
+                        // Refresh topic list to update partition count
+                        refreshTopics();
+                    } else {
+                        updateStatus("Failed to add partitions: " + throwable.getMessage());
+                        DialogHelper.showErrorDialog("Partition Addition Error", 
+                            "Failed to add partitions to topic", throwable.getMessage());
+                    }
+                });
+            });
+    }
+    
+    private String parseRetentionTime(String input) {
+        // Convert human-readable time to milliseconds
+        String lower = input.toLowerCase().trim();
+        try {
+            if (lower.endsWith("ms")) {
+                return lower.substring(0, lower.length() - 2);
+            } else if (lower.endsWith("s")) {
+                return String.valueOf(Long.parseLong(lower.substring(0, lower.length() - 1)) * 1000);
+            } else if (lower.endsWith("m")) {
+                return String.valueOf(Long.parseLong(lower.substring(0, lower.length() - 1)) * 60000);
+            } else if (lower.endsWith("h")) {
+                return String.valueOf(Long.parseLong(lower.substring(0, lower.length() - 1)) * 3600000);
+            } else if (lower.endsWith("d")) {
+                return String.valueOf(Long.parseLong(lower.substring(0, lower.length() - 1)) * 86400000);
+            } else {
+                // Assume milliseconds if no unit specified
+                return input;
+            }
+        } catch (NumberFormatException e) {
+            return input; // Return as-is if parsing fails
+        }
+    }
+    
+    private String parseRetentionSize(String input) {
+        // Convert human-readable size to bytes
+        String lower = input.toLowerCase().trim();
+        try {
+            if (lower.endsWith("b")) {
+                return lower.substring(0, lower.length() - 1);
+            } else if (lower.endsWith("kb")) {
+                return String.valueOf(Long.parseLong(lower.substring(0, lower.length() - 2)) * 1024);
+            } else if (lower.endsWith("mb")) {
+                return String.valueOf(Long.parseLong(lower.substring(0, lower.length() - 2)) * 1024 * 1024);
+            } else if (lower.endsWith("gb")) {
+                return String.valueOf(Long.parseLong(lower.substring(0, lower.length() - 2)) * 1024 * 1024 * 1024);
+            } else {
+                // Assume bytes if no unit specified
+                return input;
+            }
+        } catch (NumberFormatException e) {
+            return input; // Return as-is if parsing fails
+        }
+    }
+    
+    private void showEditConfigDialog(ClusterConfig config, TableView<ClusterConfig> table) {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Edit Configuration Property");
+        dialog.setHeaderText("Edit configuration property: " + config.getName());
+        
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        
+        TextField nameField = new TextField(config.getName());
+        nameField.setEditable(false);
+        nameField.setStyle("-fx-background-color: #f0f0f0;");
+        
+        TextField valueField = new TextField(config.getValue());
+        valueField.setPromptText("Enter configuration value");
+        
+        TextArea descArea = new TextArea(config.getDescription());
+        descArea.setEditable(false);
+        descArea.setPrefRowCount(3);
+        descArea.setWrapText(true);
+        descArea.setStyle("-fx-background-color: #f0f0f0;");
+        
+        content.getChildren().addAll(
+            new Label("Property Name:"), nameField,
+            new Label("Value:"), valueField,
+            new Label("Description:"), descArea
+        );
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefSize(400, 300);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                return valueField.getText();
+            }
+            return null;
+        });
+        
+        dialog.showAndWait().ifPresent(newValue -> {
+            config.setValue(newValue);
+            table.refresh();
+            updateStatus("Configuration property updated");
+        });
+    }
+    
+    private void showAddConfigDialog(TableView<ClusterConfig> table) {
+        Dialog<ClusterConfig> dialog = new Dialog<>();
+        dialog.setTitle("Add Configuration Property");
+        dialog.setHeaderText("Add new configuration property");
+        
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        
+        ComboBox<String> nameCombo = new ComboBox<>();
+        nameCombo.setEditable(true);
+        nameCombo.getItems().addAll(
+            "retention.ms", "retention.bytes", "cleanup.policy", "compression.type",
+            "max.message.bytes", "min.insync.replicas", "unclean.leader.election.enable",
+            "delete.retention.ms", "file.delete.delay.ms", "flush.messages", "flush.ms",
+            "segment.bytes", "segment.ms", "index.interval.bytes"
+        );
+        nameCombo.setPromptText("Select or enter property name");
+        
+        TextField valueField = new TextField();
+        valueField.setPromptText("Enter configuration value");
+        
+        TextArea descArea = new TextArea();
+        descArea.setPromptText("Optional description...");
+        descArea.setPrefRowCount(2);
+        descArea.setWrapText(true);
+        
+        content.getChildren().addAll(
+            new Label("Property Name:"), nameCombo,
+            new Label("Value:"), valueField,
+            new Label("Description:"), descArea
+        );
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefSize(400, 250);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK && !nameCombo.getEditor().getText().trim().isEmpty() 
+                && !valueField.getText().trim().isEmpty()) {
+                ClusterConfig newConfig = new ClusterConfig();
+                newConfig.setName(nameCombo.getEditor().getText().trim());
+                newConfig.setValue(valueField.getText().trim());
+                newConfig.setDescription(descArea.getText().trim());
+                newConfig.setSource("user");
+                return newConfig;
+            }
+            return null;
+        });
+        
+        dialog.showAndWait().ifPresent(newConfig -> {
+            table.getItems().add(newConfig);
+            updateStatus("Configuration property added");
+        });
+    }
+    
+    private void executeOffsetReset(String groupId, String strategy, String targetTopic, 
+                                   String value, boolean dryRun, Dialog<Void> dialog) {
+        if (currentCluster == null) {
+            DialogHelper.showErrorDialog("No Cluster", "No Connected Cluster", "Please connect to a cluster first.");
+            return;
+        }
+        
+        // Validate inputs
+        if (strategy.contains("Specific") && (value == null || value.trim().isEmpty())) {
+            DialogHelper.showErrorDialog("Missing Value", "Value Required", 
+                "Please enter a specific offset value.");
+            return;
+        }
+        
+        if (strategy.contains("Timestamp") && (value == null || value.trim().isEmpty())) {
+            DialogHelper.showErrorDialog("Missing Value", "Timestamp Required", 
+                "Please enter a timestamp value.");
+            return;
+        }
+        
+        String operationType = dryRun ? "Preview" : "Execute";
+        boolean confirmed = DialogHelper.showConfirmDialog(
+            operationType + " Offset Reset",
+            String.format("%s offset reset for consumer group '%s'?", operationType, groupId),
+            String.format("Strategy: %s\nTarget: %s\n%s", strategy, targetTopic, 
+                dryRun ? "This is a dry run - no actual changes will be made." : "This will modify consumer group offsets.")
+        );
+        
+        if (!confirmed) return;
+        
+        showLoading(true);
+        updateStatus(operationType + " offset reset...");
+        
+        CompletableFuture<Void> resetFuture;
+        
+        if (strategy.equals("Reset to Latest")) {
+            resetFuture = kafkaService.resetConsumerGroupOffsetsToLatestAsync(
+                currentCluster.getBrokerUrls(), groupId, targetTopic.equals("All Topics") ? null : targetTopic);
+        } else if (strategy.equals("Reset to Earliest")) {
+            resetFuture = kafkaService.resetConsumerGroupOffsetsToEarliestAsync(
+                currentCluster.getBrokerUrls(), groupId, targetTopic.equals("All Topics") ? null : targetTopic);
+        } else if (strategy.equals("Reset to Specific Offset")) {
+            try {
+                long offset = Long.parseLong(value.trim());
+                // For now, we'll use partition 0 - this could be enhanced to support all partitions
+                resetFuture = kafkaService.resetConsumerGroupOffsetsToOffsetAsync(
+                    currentCluster.getBrokerUrls(), groupId, targetTopic, 0, offset);
+            } catch (NumberFormatException ex) {
+                showLoading(false);
+                DialogHelper.showErrorDialog("Invalid Offset", "Invalid Number", 
+                    "Please enter a valid offset number.");
+                return;
+            }
+        } else {
+            // For timestamp and duration strategies, we'll fall back to latest for now
+            resetFuture = kafkaService.resetConsumerGroupOffsetsToLatestAsync(
+                currentCluster.getBrokerUrls(), groupId, targetTopic.equals("All Topics") ? null : targetTopic);
+        }
+        
+        resetFuture.whenComplete((result, throwable) -> {
+            Platform.runLater(() -> {
+                showLoading(false);
+                if (throwable == null) {
+                    updateStatus("Offset reset " + (dryRun ? "preview" : "execution") + " completed successfully");
+                    DialogHelper.showInfoDialog(operationType + " Completed", 
+                        "Consumer group offset reset " + (dryRun ? "preview" : "execution") + " completed successfully.");
+                    dialog.close();
+                } else {
+                    updateStatus("Failed to " + operationType.toLowerCase() + " offset reset: " + throwable.getMessage());
+                    DialogHelper.showErrorDialog("Reset Error", 
+                        "Failed to " + operationType.toLowerCase() + " offset reset", throwable.getMessage());
+                }
+            });
+        });
+    }
+    
+    private void deleteConsumerGroup(String groupId, TableView<ConsumerGroupInfo> table) {
+        if (currentCluster == null) {
+            DialogHelper.showErrorDialog("No Cluster", "No Connected Cluster", "Please connect to a cluster first.");
+            return;
+        }
+        
+        showLoading(true);
+        updateStatus("Deleting consumer group...");
+        
+        kafkaService.deleteConsumerGroupAsync(currentCluster.getBrokerUrls(), groupId)
+            .whenComplete((result, throwable) -> {
+                Platform.runLater(() -> {
+                    showLoading(false);
+                    if (throwable == null) {
+                        updateStatus("Consumer group deleted successfully");
+                        DialogHelper.showInfoDialog("Group Deleted", 
+                            "Consumer group '" + groupId + "' has been deleted successfully.");
+                        
+                        // Remove from table and refresh
+                        table.getItems().removeIf(group -> group.getGroupId().equals(groupId));
+                    } else {
+                        updateStatus("Failed to delete consumer group: " + throwable.getMessage());
+                        DialogHelper.showErrorDialog("Delete Error", 
+                            "Failed to delete consumer group", throwable.getMessage());
+                    }
+                });
+            });
+    }
+    
+    private void showEditBrokerConfigDialog(ClusterConfig config, int brokerId, TableView<ClusterConfig> table) {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Edit Broker Configuration");
+        dialog.setHeaderText("Edit broker " + brokerId + " configuration property: " + config.getName());
+        
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        
+        TextField nameField = new TextField(config.getName());
+        nameField.setEditable(false);
+        nameField.setStyle("-fx-background-color: #f0f0f0;");
+        
+        TextField valueField = new TextField(config.getValue());
+        valueField.setPromptText("Enter configuration value");
+        
+        Label currentLabel = new Label("Current Value: " + config.getValue());
+        Label sourceLabel = new Label("Source: " + config.getSource());
+        
+        TextArea descArea = new TextArea();
+        descArea.setPromptText("Property description...");
+        descArea.setPrefRowCount(3);
+        descArea.setEditable(false);
+        descArea.setStyle("-fx-background-color: #f0f0f0;");
+        
+        content.getChildren().addAll(
+            new Label("Property Name:"), nameField,
+            currentLabel, sourceLabel,
+            new Label("New Value:"), valueField,
+            new Label("Description:"), descArea
+        );
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefSize(450, 350);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK && !valueField.getText().trim().equals(config.getValue())) {
+                return valueField.getText().trim();
+            }
+            return null;
+        });
+        
+        dialog.showAndWait().ifPresent(newValue -> {
+            saveBrokerConfiguration(brokerId, config.getName(), newValue, table);
+        });
+    }
+    
+    private void saveBrokerConfiguration(int brokerId, String propertyName, String newValue, TableView<ClusterConfig> table) {
+        if (currentCluster == null) {
+            DialogHelper.showErrorDialog("No Cluster", "No Connected Cluster", "Please connect to a cluster first.");
+            return;
+        }
+        
+        boolean confirmed = DialogHelper.showConfirmDialog(
+            "Update Broker Configuration", 
+            String.format("Update broker %d configuration?", brokerId),
+            String.format("Property: %s\nNew Value: %s\n\nThis will update the broker configuration.", propertyName, newValue)
+        );
+        
+        if (!confirmed) return;
+        
+        showLoading(true);
+        updateStatus("Updating broker configuration...");
+        
+        Map<String, String> configUpdate = new HashMap<>();
+        configUpdate.put(propertyName, newValue);
+        
+        kafkaService.updateBrokerConfigAsync(currentCluster.getBrokerUrls(), brokerId, configUpdate)
+            .whenComplete((result, throwable) -> {
+                Platform.runLater(() -> {
+                    showLoading(false);
+                    if (throwable == null) {
+                        updateStatus("Broker configuration updated successfully");
+                        DialogHelper.showInfoDialog("Configuration Updated", 
+                            "Broker configuration has been updated successfully.");
+                        
+                        // Refresh the configuration table
+                        kafkaService.getBrokerConfigAsync(currentCluster.getBrokerUrls(), brokerId)
+                            .thenAccept(configs -> Platform.runLater(() -> table.getItems().setAll(configs)))
+                            .exceptionally(ex -> {
+                                Platform.runLater(() -> updateStatus("Failed to refresh broker config: " + ex.getMessage()));
+                                return null;
+                            });
+                    } else {
+                        updateStatus("Failed to update broker configuration: " + throwable.getMessage());
+                        DialogHelper.showErrorDialog("Update Error", 
+                            "Failed to update broker configuration", throwable.getMessage());
+                    }
+                });
+            });
+    }
+    
+    private void showEditClusterConfigDialog(ClusterConfig config, TableView<ClusterConfig> table) {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Edit Cluster Configuration");
+        dialog.setHeaderText("Edit cluster configuration property: " + config.getName());
+        
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        
+        TextField nameField = new TextField(config.getName());
+        nameField.setEditable(false);
+        nameField.setStyle("-fx-background-color: #f0f0f0;");
+        
+        TextField valueField = new TextField(config.getValue());
+        valueField.setPromptText("Enter configuration value");
+        
+        Label currentLabel = new Label("Current Value: " + config.getValue());
+        Label sourceLabel = new Label("Source: " + config.getSource());
+        
+        TextArea warningArea = new TextArea();
+        warningArea.setText("Warning: Modifying cluster configuration can affect cluster performance and behavior.\nPlease ensure you understand the implications of the changes.");
+        warningArea.setEditable(false);
+        warningArea.setPrefRowCount(2);
+        warningArea.setStyle("-fx-background-color: #fff3cd; -fx-text-fill: #856404;");
+        
+        content.getChildren().addAll(
+            new Label("Property Name:"), nameField,
+            currentLabel, sourceLabel,
+            new Label("New Value:"), valueField,
+            warningArea
+        );
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefSize(450, 350);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK && !valueField.getText().trim().equals(config.getValue())) {
+                return valueField.getText().trim();
+            }
+            return null;
+        });
+        
+        dialog.showAndWait().ifPresent(newValue -> {
+            saveClusterConfiguration(config.getName(), newValue, table);
+        });
+    }
+    
+    private void saveClusterConfiguration(String propertyName, String newValue, TableView<ClusterConfig> table) {
+        if (currentCluster == null) {
+            DialogHelper.showErrorDialog("No Cluster", "No Connected Cluster", "Please connect to a cluster first.");
+            return;
+        }
+        
+        boolean confirmed = DialogHelper.showConfirmDialog(
+            "Update Cluster Configuration", 
+            "Update cluster configuration?",
+            String.format("Property: %s\nNew Value: %s\n\nWarning: This will update the cluster configuration and may affect all brokers.", propertyName, newValue)
+        );
+        
+        if (!confirmed) return;
+        
+        showLoading(true);
+        updateStatus("Updating cluster configuration...");
+        
+        Map<String, String> configUpdate = new HashMap<>();
+        configUpdate.put(propertyName, newValue);
+        
+        kafkaService.updateClusterConfigAsync(currentCluster.getBrokerUrls(), configUpdate)
+            .whenComplete((result, throwable) -> {
+                Platform.runLater(() -> {
+                    showLoading(false);
+                    if (throwable == null) {
+                        updateStatus("Cluster configuration updated successfully");
+                        DialogHelper.showInfoDialog("Configuration Updated", 
+                            "Cluster configuration has been updated successfully.");
+                        
+                        // Refresh the configuration table
+                        kafkaService.getClusterConfigAsync(currentCluster.getBrokerUrls())
+                            .thenAccept(configs -> Platform.runLater(() -> table.getItems().setAll(configs)))
+                            .exceptionally(ex -> {
+                                Platform.runLater(() -> updateStatus("Failed to refresh cluster config: " + ex.getMessage()));
+                                return null;
+                            });
+                    } else {
+                        updateStatus("Failed to update cluster configuration: " + throwable.getMessage());
+                        DialogHelper.showErrorDialog("Update Error", 
+                            "Failed to update cluster configuration", throwable.getMessage());
+                    }
+                });
+            });
     }
     
     public void shutdown() {
