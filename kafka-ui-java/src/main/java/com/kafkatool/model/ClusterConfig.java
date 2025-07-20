@@ -102,6 +102,19 @@ public class ClusterConfig {
         return documentation;
     }
     
+    // Description property (alias for documentation)
+    public String getDescription() {
+        return getDocumentation();
+    }
+    
+    public void setDescription(String description) {
+        setDocumentation(description);
+    }
+    
+    public StringProperty descriptionProperty() {
+        return documentation;
+    }
+    
     // Type property
     public String getType() {
         return type.get();
