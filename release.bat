@@ -21,45 +21,49 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Change to the Java project directory
-cd /d "%~dp0kafka-ui-java"
-
+REM Check if we're in the correct directory
 if not exist "pom.xml" (
-    echo ERROR: pom.xml not found. Make sure you're running this from the correct directory.
+    echo ERROR: pom.xml not found. Make sure you're running this from the project root directory.
     pause
     exit /b 1
 )
 
 echo.
-echo Step 1: Building JAR with dependencies
-call mvnw.cmd clean package
+echo Step 1: Building all modules
+call mvnw.cmd clean package -DskipTests
 if %errorlevel% neq 0 (
     echo ERROR: Maven build failed
     pause
     exit /b 1
 )
 
-REM Check if JAR was created
-if not exist "target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar" (
-    echo ERROR: JAR file not found after build
+REM Check if JARs were created
+if not exist "ui\target\kafka-ui-application-2.0.0-jar-with-dependencies.jar" (
+    echo ERROR: UI JAR file not found after build
+    pause
+    exit /b 1
+)
+
+if not exist "service\target\kafka-ui-service-2.0.0-jar-with-dependencies.jar" (
+    echo ERROR: Service JAR file not found after build
     pause
     exit /b 1
 )
 
 echo.
 echo Step 2: Creating release directory
-if exist "..\release" rmdir /s /q "..\release"
-mkdir "..\release"
+if exist "release" rmdir /s /q "release"
+mkdir "release"
 
 echo.
 echo Step 3: Creating Windows executable with embedded JRE using jpackage
 jpackage ^
-    --input target ^
+    --input ui\target ^
     --name "KafkaUITool" ^
-    --main-jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar ^
-    --main-class com.kafkatool.KafkaUIApplication ^
+    --main-jar kafka-ui-application-2.0.0-jar-with-dependencies.jar ^
+    --main-class com.kafkatool.ui.Main ^
     --type exe ^
-    --dest "..\release" ^
+    --dest "release" ^
     --app-version "2.0.0" ^
     --description "Cross-platform Kafka management tool" ^
     --vendor "KafkaUITool" ^
@@ -77,16 +81,23 @@ if %errorlevel% neq 0 (
 
 echo.
 echo Step 4: Creating portable ZIP package
-cd "..\release"
+cd "release"
 if exist "KafkaUITool-2.0.0.zip" del "KafkaUITool-2.0.0.zip"
 
-REM Create a portable package with the JAR
+REM Create a portable package with both JARs
 mkdir "KafkaUITool-2.0.0-portable"
-copy "..\kafka-ui-java\target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar" "KafkaUITool-2.0.0-portable\"
-echo @echo off > "KafkaUITool-2.0.0-portable\run.bat"
-echo echo Starting Kafka UI Tool >> "KafkaUITool-2.0.0-portable\run.bat"
-echo java -jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar >> "KafkaUITool-2.0.0-portable\run.bat"
-echo pause >> "KafkaUITool-2.0.0-portable\run.bat"
+copy "..\ui\target\kafka-ui-application-2.0.0-jar-with-dependencies.jar" "KafkaUITool-2.0.0-portable\"
+copy "..\service\target\kafka-ui-service-2.0.0-jar-with-dependencies.jar" "KafkaUITool-2.0.0-portable\"
+
+echo @echo off > "KafkaUITool-2.0.0-portable\run-ui.bat"
+echo echo Starting Kafka UI Tool GUI >> "KafkaUITool-2.0.0-portable\run-ui.bat"
+echo java -jar kafka-ui-application-2.0.0-jar-with-dependencies.jar >> "KafkaUITool-2.0.0-portable\run-ui.bat"
+echo pause >> "KafkaUITool-2.0.0-portable\run-ui.bat"
+
+echo @echo off > "KafkaUITool-2.0.0-portable\run-service.bat"
+echo echo Starting Kafka UI Tool Service >> "KafkaUITool-2.0.0-portable\run-service.bat"
+echo java -jar kafka-ui-service-2.0.0-jar-with-dependencies.jar --api-server >> "KafkaUITool-2.0.0-portable\run-service.bat"
+echo pause >> "KafkaUITool-2.0.0-portable\run-service.bat"
 
 REM Create README for portable version
 echo Kafka UI Tool - Portable Version > "KafkaUITool-2.0.0-portable\README.txt"
@@ -94,10 +105,15 @@ echo. >> "KafkaUITool-2.0.0-portable\README.txt"
 echo Requirements: >> "KafkaUITool-2.0.0-portable\README.txt"
 echo - Java 17+ installed and in PATH >> "KafkaUITool-2.0.0-portable\README.txt"
 echo. >> "KafkaUITool-2.0.0-portable\README.txt"
-echo To run: >> "KafkaUITool-2.0.0-portable\README.txt"
-echo 1. Double-click run.bat >> "KafkaUITool-2.0.0-portable\README.txt"
+echo To run GUI application: >> "KafkaUITool-2.0.0-portable\README.txt"
+echo 1. Double-click run-ui.bat >> "KafkaUITool-2.0.0-portable\README.txt"
 echo OR >> "KafkaUITool-2.0.0-portable\README.txt"
-echo 2. Run: java -jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar >> "KafkaUITool-2.0.0-portable\README.txt"
+echo 2. Run: java -jar kafka-ui-application-2.0.0-jar-with-dependencies.jar >> "KafkaUITool-2.0.0-portable\README.txt"
+echo. >> "KafkaUITool-2.0.0-portable\README.txt"
+echo To run service mode: >> "KafkaUITool-2.0.0-portable\README.txt"
+echo 1. Double-click run-service.bat >> "KafkaUITool-2.0.0-portable\README.txt"
+echo OR >> "KafkaUITool-2.0.0-portable\README.txt"
+echo 2. Run: java -jar kafka-ui-service-2.0.0-jar-with-dependencies.jar --api-server >> "KafkaUITool-2.0.0-portable\README.txt"
 
 REM Use PowerShell to create ZIP (available on Windows 10+)
 powershell -command "Compress-Archive -Path 'KafkaUITool-2.0.0-portable' -DestinationPath 'KafkaUITool-2.0.0-portable.zip'"

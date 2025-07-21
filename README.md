@@ -253,7 +253,7 @@ cd KafkaUITool
 ```
 
 #### Using Installed Maven
-If you have Maven installed:
+If you have Maven installed system-wide:
 
 ```bash
 # Clone the repository
@@ -263,7 +263,7 @@ cd KafkaUITool
 # Compile the project
 mvn clean compile
 
-# Run tests (when available)
+# Run tests
 mvn test
 
 # Package the application
@@ -274,26 +274,38 @@ mvn javafx:run -pl ui
 ```
 
 ### Running the JAR
+After building with either method above:
+
 ```bash
-# Build JARs with dependencies (using wrapper)
-.\mvnw.cmd clean package    # Windows
-./mvnw clean package       # macOS/Linux
-
-# Or with installed Maven
-mvn clean package
-
-# Run the GUI application (default)
+# Run the GUI application (requires display)
 java -jar ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar
 
-# Show help
+# Show GUI application help
 java -jar ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar --help
 
-# Run with REST API server
+# Run REST API service (headless mode)
 java -jar service/target/kafka-ui-service-2.0.0-jar-with-dependencies.jar --api-server --port=8080
 
-# Service help
+# Show service help
 java -jar service/target/kafka-ui-service-2.0.0-jar-with-dependencies.jar --help
+
+# Service will be available at: http://localhost:8080/api/health
 ```
+
+### Windows Executable
+To create a native Windows executable:
+
+```bash
+# Build the executable (creates Linux .deb on Linux, .exe on Windows)
+./build-windows-exe.sh
+
+# On Windows with JDK 17+, this creates a native .exe with embedded JRE:
+# jpackage --input ui/target --main-jar kafka-ui-application-2.0.0-jar-with-dependencies.jar \
+#   --main-class com.kafkatool.ui.Main --name KafkaUITool --app-version 2.0.0 \
+#   --dest . --type exe --win-console --win-dir-chooser --win-shortcut --win-menu
+```
+
+The Windows executable will be self-contained and won't require Java to be installed on the target machine.
 
 ## 📚 Documentation
 

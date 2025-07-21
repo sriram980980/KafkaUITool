@@ -62,7 +62,6 @@
 
 ### Build Tests
 ```bash
-cd kafka-ui-java
 ./mvnw clean test
 ```
 

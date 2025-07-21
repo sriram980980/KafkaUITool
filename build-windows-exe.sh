@@ -31,13 +31,13 @@ mkdir -p "$WIN_BUILD_DIR"
 
 echo ""
 echo "========================================"
-echo "Step 1: Building UI JAR"
+echo "Step 1: Building all modules"
 echo "========================================"
 
-# Build the UI JAR
-./mvnw clean package -pl ui -DskipTests
+# Build all modules (commons must be built first for ui dependency)
+./mvnw clean package -DskipTests
 
-echo "✓ UI JAR built successfully"
+echo "✓ All modules built successfully"
 
 echo ""
 echo "========================================"

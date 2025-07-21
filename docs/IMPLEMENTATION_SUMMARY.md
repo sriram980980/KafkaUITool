@@ -20,7 +20,7 @@
 - **Status**: ✅ COMPLETED
 - **Files Created**:
   - `start-api-server.bat` - Main launcher script
-  - `kafka-ui-java/src/main/java/com/kafkatool/RestApiMain.java` - API server main class
+  - `service/src/main/java/com/kafkatool/service/KafkaServiceMain.java` - API server main class
 - **Features**:
   - Automatic JAR building if needed
   - Configurable port (default: 8080)
@@ -32,9 +32,9 @@
 ### 3. Add chat section in left menu (below clusters, topics)
 - **Status**: ✅ COMPLETED
 - **Files Modified**:
-  - `kafka-ui-java/src/main/resources/fxml/main.fxml` - Added chat UI components
-  - `kafka-ui-java/src/main/java/com/kafkatool/controller/MainController.java` - Added chat functionality
-  - `kafka-ui-java/src/main/resources/css/application.css` - Added chat styling
+  - `ui/src/main/resources/fxml/main.fxml` - Added chat UI components
+  - `ui/src/main/java/com/kafkatool/ui/controller/MainController.java` - Added chat functionality
+  - `ui/src/main/resources/css/application.css` - Added chat styling
 - **Features**:
   - Chat messages display area with timestamps
   - Message input field with Enter key support
