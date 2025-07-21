@@ -1,40 +1,55 @@
 package com.kafkatool.model;
 
+import javafx.beans.property.*;
+
 /**
  * Model class representing metrics information
  */
 public class MetricsInfo {
-    private String metricName;
-    private String metricType;
-    private double value;
-    private String unit;
-    private long timestamp;
-    private String description;
+    private StringProperty metricName = new SimpleStringProperty();
+    private StringProperty metricType = new SimpleStringProperty();
+    private DoubleProperty value = new SimpleDoubleProperty();
+    private StringProperty unit = new SimpleStringProperty();
+    private LongProperty timestamp = new SimpleLongProperty();
+    private StringProperty description = new SimpleStringProperty();
     
     public MetricsInfo() {}
     
     public MetricsInfo(String metricName, String metricType, double value) {
-        this.metricName = metricName;
-        this.metricType = metricType;
-        this.value = value;
+        setMetricName(metricName);
+        setMetricType(metricType);
+        setValue(value);
     }
     
-    // Getters and setters
-    public String getMetricName() { return metricName; }
-    public void setMetricName(String metricName) { this.metricName = metricName; }
+    // JavaFX Property methods
+    public StringProperty metricNameProperty() { return metricName; }
+    public StringProperty metricTypeProperty() { return metricType; }
+    public DoubleProperty valueProperty() { return value; }
+    public StringProperty unitProperty() { return unit; }
+    public LongProperty timestampProperty() { return timestamp; }
+    public StringProperty descriptionProperty() { return description; }
+    public StringProperty categoryProperty() { return metricType; } // Alias
     
-    public String getMetricType() { return metricType; }
-    public void setMetricType(String metricType) { this.metricType = metricType; }
+    // Regular getters and setters
+    public String getMetricName() { return metricName.get(); }
+    public void setMetricName(String metricName) { this.metricName.set(metricName); }
     
-    public double getValue() { return value; }
-    public void setValue(double value) { this.value = value; }
+    public String getMetricType() { return metricType.get(); }
+    public void setMetricType(String metricType) { this.metricType.set(metricType); }
     
-    public String getUnit() { return unit; }
-    public void setUnit(String unit) { this.unit = unit; }
+    public double getValue() { return value.get(); }
+    public void setValue(double value) { this.value.set(value); }
     
-    public long getTimestamp() { return timestamp; }
-    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+    public String getUnit() { return unit.get(); }
+    public void setUnit(String unit) { this.unit.set(unit); }
     
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public long getTimestamp() { return timestamp.get(); }
+    public void setTimestamp(long timestamp) { this.timestamp.set(timestamp); }
+    
+    public String getDescription() { return description.get(); }
+    public void setDescription(String description) { this.description.set(description); }
+    
+    // Method expected by UI - alias for metricType as category  
+    public String getCategory() { return metricType.get(); }
+    public void setCategory(String category) { this.metricType.set(category); }
 }

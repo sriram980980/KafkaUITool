@@ -59,7 +59,7 @@
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.kafkatool.ui.KafkaUIApplication</mainClass>
+                    <mainClass>com.kafkatool.ui.Main</mainClass>
                 </configuration>
             </plugin>
 
@@ -79,7 +79,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.kafkatool.ui.KafkaUIApplication</mainClass>
+                            <mainClass>com.kafkatool.ui.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

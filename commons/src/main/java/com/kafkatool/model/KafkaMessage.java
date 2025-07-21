@@ -96,6 +96,18 @@ public class KafkaMessage {
         this.headers = headers;
     }
     
+    // Method expected by UI for displaying headers as string
+    public String getHeadersAsString() {
+        if (headers == null || headers.isEmpty()) {
+            return "No headers";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        }
+        return sb.toString().trim();
+    }
+    
     @Override
     public String toString() {
         return String.format("Message[topic=%s, partition=%d, offset=%d]", topic, partition, offset);

@@ -67,6 +67,23 @@ public class ClusterInfo {
     
     @Override
     public String toString() {
+        if (name != null && brokerUrls != null) {
+            return String.format("%s (%s)", name, brokerUrls);
+        }
         return name != null ? name : "Unnamed Cluster";
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ClusterInfo that = (ClusterInfo) obj;
+        return java.util.Objects.equals(name, that.name) && 
+               java.util.Objects.equals(brokerUrls, that.brokerUrls);
+    }
+    
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(name, brokerUrls);
     }
 }

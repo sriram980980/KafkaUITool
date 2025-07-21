@@ -41,4 +41,7 @@ public class SchemaInfo {
     
     public String getReferences() { return references; }
     public void setReferences(String references) { this.references = references; }
+    
+    // Method expected by UI for schema compatibility info
+    public String getCompatibility() { return "FULL"; } // Default compatibility
 }

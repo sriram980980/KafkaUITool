@@ -78,6 +78,11 @@ public class ConsumerGroupInfo {
         this.coordinator = coordinator;
     }
     
+    // Alias method for UI compatibility
+    public long getTotalLag() {
+        return lag;
+    }
+    
     @Override
     public String toString() {
         return groupId != null ? groupId : "Unknown Group";

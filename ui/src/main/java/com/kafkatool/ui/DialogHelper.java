@@ -145,7 +145,7 @@ public class DialogHelper {
             if (dialogButton == createButtonType) {
                 String name = nameField.getText().trim();
                 if (!name.isEmpty()) {
-                    return new TopicInfo(name, partitionsSpinner.getValue(), replicationSpinner.getValue());
+                    return new TopicInfo(name, partitionsSpinner.getValue(), replicationSpinner.getValue().shortValue());
                 }
             }
             return null;
