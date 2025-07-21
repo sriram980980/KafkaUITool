@@ -104,32 +104,36 @@ The tool has been completely rewritten in Java using JavaFX for cross-platform c
 ```bash
 # Clone the repository
 git clone https://github.com/sriram980980/KafkaUITool.git
-cd KafkaUITool/kafka-ui-java
+cd KafkaUITool
 
 # Launch the GUI application directly
-./mvnw javafx:run
+./mvnw javafx:run -pl ui
 
 # Alternative: Build and run JAR
 ./mvnw clean package
-java --module-path /path/to/javafx/lib --add-modules javafx.controls,javafx.fxml -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar
+java -jar ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar
 ```
 
 #### Option 2: Launch REST API Server (For Remote Access)
 ```bash
 # Build and run with REST API server
 ./mvnw clean package
-java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar --api-server --port=8080
+java -jar service/target/kafka-ui-service-2.0.0-jar-with-dependencies.jar --api-server --port=8080
 
 # Server will be available at: http://localhost:8080
-# The API server now runs independently of JavaFX and can be used in headless environments
+# The API server runs independently of JavaFX and can be used in headless environments
 ```
 
-#### Option 3: Use CLI Interface (For Automation/Scripting)
+#### Option 3: Use Release Script (Recommended for Production)
 ```bash
-# Build and use command line interface
-./mvnw clean package
-java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar topic list --brokers=localhost:9092
-java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar cluster info --brokers=localhost:9092
+# Build everything and create release artifacts
+./release.sh
+
+# Run UI from release directory
+java -jar release/kafka-ui-application-2.0.0-jar-with-dependencies.jar
+
+# Run service from release directory
+java -jar release/kafka-ui-service-2.0.0-jar-with-dependencies.jar --api-server
 ```
 
 ### 🎯 Platform-Specific Quick Start
@@ -137,55 +141,53 @@ java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar cluster info --br
 #### Windows Users
 ```cmd
 # Development build (compile + test + package)
-build.bat
+.\mvnw.cmd clean package
 
-# Production release (creates Windows exe with embedded JRE)
-release.bat
+# Production release (creates release artifacts)
+.\release.bat
 
 # Run the GUI
-cd kafka-ui-java
-.\mvnw.cmd javafx:run
+.\mvnw.cmd javafx:run -pl ui
 ```
 
 #### macOS/Linux Users
 ```bash
 # Make scripts executable
-chmod +x run.sh demo-api-server.sh
+chmod +x release.sh
 
 # Quick development run
-./run.sh
+./mvnw javafx:run -pl ui
 
-# Run with API server
-./demo-api-server.sh
+# Production release
+./release.sh
 
 # Manual build and run
-cd kafka-ui-java
-./mvnw javafx:run
+./mvnw clean package
 ```
 
 ### 📦 Packaging and Distribution
 
-#### Create Standalone JAR
+#### Create Standalone JARs
 ```bash
-cd kafka-ui-java
+# Build all modules
 ./mvnw clean package
 
-# Creates: target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar
-# This JAR includes all dependencies and can be distributed
+# Creates:
+# - ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar
+# - service/target/kafka-ui-service-2.0.0-jar-with-dependencies.jar
+# Both JARs include all dependencies and can be distributed
 ```
 
 #### Create Native Installers (Advanced)
 ```bash
 # Requires JDK 17+ with jpackage tool
 ./mvnw clean package
-jpackage --input target --main-jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar --main-class com.kafkatool.KafkaUIApplication --name "Kafka UI Tool" --type msi  # Windows
-jpackage --input target --main-jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar --main-class com.kafkatool.KafkaUIApplication --name "Kafka UI Tool" --type dmg  # macOS
-jpackage --input target --main-jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar --main-class com.kafkatool.KafkaUIApplication --name "Kafka UI Tool" --type deb  # Linux
+jpackage --input ui/target --main-jar kafka-ui-application-2.0.0-jar-with-dependencies.jar --main-class com.kafkatool.ui.Main --name "Kafka UI Tool" --type msi  # Windows
+jpackage --input ui/target --main-jar kafka-ui-application-2.0.0-jar-with-dependencies.jar --main-class com.kafkatool.ui.Main --name "Kafka UI Tool" --type dmg  # macOS
+jpackage --input ui/target --main-jar kafka-ui-application-2.0.0-jar-with-dependencies.jar --main-class com.kafkatool.ui.Main --name "Kafka UI Tool" --type deb  # Linux
 ```
 
 ### 🔧 Development Setup
-
-For detailed build information and automated scripts, see [docs/BUILD_SCRIPTS.md](docs/BUILD_SCRIPTS.md).
 
 ### Manual Build Prerequisites
 1. **Install Java 17+**:
@@ -235,19 +237,19 @@ The project includes Maven Wrapper, so you don't need to install Maven separatel
 ```bash
 # Clone the repository
 git clone https://github.com/sriram980980/KafkaUITool.git
-cd KafkaUITool/kafka-ui-java
+cd KafkaUITool
 
 # On Windows
 .\mvnw.cmd clean compile
 .\mvnw.cmd test
 .\mvnw.cmd clean package
-.\mvnw.cmd javafx:run
+.\mvnw.cmd javafx:run -pl ui
 
 # On macOS/Linux
 ./mvnw clean compile
 ./mvnw test  
 ./mvnw clean package
-./mvnw javafx:run
+./mvnw javafx:run -pl ui
 ```
 
 #### Using Installed Maven
@@ -256,7 +258,7 @@ If you have Maven installed:
 ```bash
 # Clone the repository
 git clone https://github.com/sriram980980/KafkaUITool.git
-cd KafkaUITool/kafka-ui-java
+cd KafkaUITool
 
 # Compile the project
 mvn clean compile
@@ -267,13 +269,13 @@ mvn test
 # Package the application
 mvn clean package
 
-# Run the application
-mvn javafx:run
+# Run the UI application
+mvn javafx:run -pl ui
 ```
 
 ### Running the JAR
 ```bash
-# Build JAR with dependencies (using wrapper)
+# Build JARs with dependencies (using wrapper)
 .\mvnw.cmd clean package    # Windows
 ./mvnw clean package       # macOS/Linux
 
@@ -281,13 +283,16 @@ mvn javafx:run
 mvn clean package
 
 # Run the GUI application (default)
-java --module-path /path/to/javafx/lib --add-modules javafx.controls,javafx.fxml -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar
+java -jar ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar
+
+# Show help
+java -jar ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar --help
 
 # Run with REST API server
-java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar --api-server --port=8080
+java -jar service/target/kafka-ui-service-2.0.0-jar-with-dependencies.jar --api-server --port=8080
 
-# Use CLI interface
-java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar topic list --brokers=localhost:9092
+# Service help
+java -jar service/target/kafka-ui-service-2.0.0-jar-with-dependencies.jar --help
 ```
 
 ## 📚 Documentation
@@ -304,31 +309,33 @@ java -jar target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar topic list --brok
 
 ### Project Structure
 ```
-kafka-ui-java/
-├── src/main/java/com/kafkatool/
-│   ├── Main.java                       # Unified entry point with smart mode detection
-│   ├── KafkaUIApplication.java          # JavaFX GUI application class
-│   ├── RestApiMain.java                # Standalone REST API server (JavaFX-free)
-│   ├── controller/
-│   │   └── MainController.java          # Main UI controller (MVC)
-│   ├── model/
-│   │   ├── ClusterInfo.java            # Cluster data model
-│   │   ├── TopicInfo.java              # Topic data model
-│   │   └── KafkaMessage.java           # Message data model
-│   ├── service/
-│   │   ├── KafkaService.java           # Service interface
-│   │   └── KafkaServiceImpl.java       # Kafka operations implementation
-│   └── util/
-│       ├── DialogHelper.java           # UI dialog utilities
-│       ├── JsonFormatter.java          # JSON formatting utilities
-│       └── SettingsManager.java        # Settings persistence
-├── src/main/resources/
-│   ├── fxml/
-│   │   └── main.fxml                   # Main UI layout
-│   ├── css/
-│   │   └── application.css             # Dark theme stylesheet
-│   └── logback.xml                     # Logging configuration
-└── pom.xml                             # Maven project configuration
+KafkaUITool/
+├── pom.xml                              # Parent POM
+├── commons/                             # Shared models and services
+│   ├── src/main/java/com/kafkatool/
+│   │   ├── model/                       # Data models
+│   │   ├── service/                     # Kafka services
+│   │   └── util/                        # Utilities
+│   └── pom.xml
+├── ui/                                  # JavaFX GUI application
+│   ├── src/main/java/com/kafkatool/ui/
+│   │   ├── Main.java                    # UI main class
+│   │   ├── KafkaUIApplication.java      # JavaFX application
+│   │   ├── controller/                  # UI controllers
+│   │   └── DialogHelper.java            # UI utilities
+│   ├── src/main/resources/
+│   │   ├── fxml/                        # FXML layouts
+│   │   ├── css/                         # Stylesheets
+│   │   ├── images/                      # Images
+│   │   └── logback.xml                  # UI logging config
+│   └── pom.xml
+├── service/                             # Headless REST API service
+│   ├── src/main/java/com/kafkatool/service/
+│   │   ├── KafkaServiceMain.java        # Service main class
+│   │   └── api/                         # REST API
+│   └── pom.xml
+├── release.sh                           # Release build script
+└── README.md                            # This file
 ```
 
 ### Key Technologies
@@ -337,6 +344,7 @@ kafka-ui-java/
 - **Jackson 2.16.1**: JSON processing
 - **Logback 1.4.14**: Structured logging
 - **Maven**: Build system and dependency management
+- **Javalin**: REST API server (service module)
 
 ## 📖 User Guide
 
@@ -367,7 +375,7 @@ kafka-ui-java/
 
 ### Settings & Configuration
 - **Persistent Storage**: Cluster configurations are automatically saved
-- **Logging**: Application logs are saved to `~/.kafka-ui-tool/kafka-ui-tool.log`
+- **Logging**: Application logs are saved to `~/.kafka-ui-tool/kafka-ui-application.log` (UI) and service logs to appropriate locations
 - **Theme**: Modern dark theme with elegant styling
 
 ## 🔧 Troubleshooting
@@ -386,19 +394,20 @@ The application now supports multiple launch modes:
 
 **GUI Mode (Default)**: 
 ```bash
-java -jar kafka-ui-tool.jar
+java -jar ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar
 # Requires JavaFX for desktop interface
 ```
 
 **API Server Mode**:
 ```bash
-java -jar kafka-ui-tool.jar --api-server --port=8080
+java -jar service/target/kafka-ui-service-2.0.0-jar-with-dependencies.jar --api-server --port=8080
 # Runs headless REST API server, no JavaFX required
 ```
 
 **Help/CLI Mode**:
 ```bash
-java -jar kafka-ui-tool.jar --help
+java -jar ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar --help
+java -jar service/target/kafka-ui-service-2.0.0-jar-with-dependencies.jar --help
 # Shows usage information
 ```
 

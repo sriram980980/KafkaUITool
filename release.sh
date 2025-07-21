@@ -29,7 +29,7 @@ echo "Step 1: Building all modules"
 echo "========================================"
 
 # Clean and build all modules
-./mvnw clean install -DskipTests
+./mvnw clean package -DskipTests
 
 echo "✓ All modules built successfully"
 
