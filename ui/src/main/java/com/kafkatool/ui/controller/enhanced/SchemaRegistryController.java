@@ -74,7 +74,7 @@ public class SchemaRegistryController {
             return;
         }
         
-        statusLabel.setText("Connecting");
+        statusLabel.setText("Connecting!");
         connectButton.setDisable(true);
         
         schemaRegistryService.testConnectionAsync(url)

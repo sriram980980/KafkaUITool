@@ -90,7 +90,7 @@ public class KafkaConnectController {
             return;
         }
         
-        statusLabel.setText("Connecting");
+        statusLabel.setText("Connecting!");
         connectButton.setDisable(true);
         
         connectService.testConnectionAsync(url)

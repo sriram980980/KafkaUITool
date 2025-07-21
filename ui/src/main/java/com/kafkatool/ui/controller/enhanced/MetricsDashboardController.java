@@ -179,7 +179,7 @@ public class MetricsDashboardController {
             return;
         }
         
-        statusLabel.setText("Connecting");
+        statusLabel.setText("Connecting!");
         connectButton.setDisable(true);
         
         kafkaService.testConnectionAsync(brokerUrls)

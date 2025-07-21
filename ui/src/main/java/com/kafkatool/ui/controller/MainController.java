@@ -261,7 +261,7 @@ public class MainController implements Initializable {
                 if (empty || value == null) {
                     setText(null);
                 } else {
-                    String displayValue = value.length() > 100 ? value.substring(0, 97) + "" : value;
+                    String displayValue = value.length() > 100 ? value.substring(0, 97) + "!" : value;
                     setText(displayValue);
                     setTooltip(new Tooltip(value));
                 }
@@ -569,7 +569,7 @@ public class MainController implements Initializable {
         if (currentCluster != null && "Connected".equals(currentCluster.getStatus())) {
             DialogHelper.showCreateTopicDialog().ifPresent(topicConfig -> {
                 showLoading(true);
-                updateStatus("Creating topic: " + topicConfig.getName());
+                updateStatus("Creating topic: " + topicConfig.getName() + "!");
                 
                 kafkaService.createTopicAsync(
                     currentCluster.getBrokerUrls(),
@@ -605,7 +605,7 @@ public class MainController implements Initializable {
             
             if (confirmed) {
                 showLoading(true);
-                updateStatus("Deleting topic: " + currentTopic.getName());
+                updateStatus("Deleting topic: " + currentTopic.getName() + "!");
                 
                 kafkaService.deleteTopicAsync(currentCluster.getBrokerUrls(), currentTopic.getName())
                     .whenComplete((result, throwable) -> {
@@ -634,7 +634,7 @@ public class MainController implements Initializable {
     private void refreshTopics() {
         if (currentCluster != null && "Connected".equals(currentCluster.getStatus())) {
             showLoading(true);
-            updateStatus("Refreshing topics");
+            updateStatus("Refreshing topics!");
             
             kafkaService.getTopicsAsync(currentCluster.getBrokerUrls())
                 .whenComplete((topicList, throwable) -> {
@@ -834,7 +834,7 @@ public class MainController implements Initializable {
         
         // Load configuration data
         showLoading(true);
-        updateStatus("Loading topic configuration");
+        updateStatus("Loading topic configuration!");
         
         kafkaService.getTopicConfigAsync(currentCluster.getBrokerUrls(), currentTopic.getName())
             .whenComplete((configMap, throwable) -> {
@@ -977,7 +977,7 @@ public class MainController implements Initializable {
                 int partition = partitionComboBox.getValue();
                 
                 showLoading(true);
-                updateStatus("Loading messages");
+                updateStatus("Loading messages!");
                 
                 kafkaService.getMessagesBetweenOffsetsAsync(
                     currentCluster.getBrokerUrls(),
@@ -1012,7 +1012,7 @@ public class MainController implements Initializable {
             int partition = partitionComboBox.getValue();
             
             showLoading(true);
-            updateStatus("Loading latest messages");
+            updateStatus("Loading latest messages!");
             
             kafkaService.getLatestMessagesAsync(
                 currentCluster.getBrokerUrls(),
@@ -1040,7 +1040,7 @@ public class MainController implements Initializable {
         if (currentTopic != null && currentCluster != null) {
             DialogHelper.showProduceMessageDialog(currentTopic.getName()).ifPresent(messageData -> {
                 showLoading(true);
-                updateStatus("Producing message");
+                updateStatus("Producing message!");
                 
                 kafkaService.produceMessageAsync(
                     currentCluster.getBrokerUrls(),
@@ -2362,7 +2362,7 @@ public class MainController implements Initializable {
         }
         
         showLoading(true);
-        updateStatus("Saving topic configuration");
+        updateStatus("Saving topic configuration!");
         
         kafkaService.updateTopicConfigAsync(currentCluster.getBrokerUrls(), currentTopic.getName(), configUpdates)
             .whenComplete((result, throwable) -> {
@@ -2599,7 +2599,7 @@ public class MainController implements Initializable {
         if (!confirmed) return;
         
         showLoading(true);
-        updateStatus(operationType + " offset reset");
+        updateStatus(operationType + " offset reset!");
         
         CompletableFuture<Void> resetFuture;
         
@@ -2651,7 +2651,7 @@ public class MainController implements Initializable {
         }
         
         showLoading(true);
-        updateStatus("Deleting consumer group");
+        updateStatus("Deleting consumer group!");
         
         kafkaService.deleteConsumerGroupAsync(currentCluster.getBrokerUrls(), groupId)
             .whenComplete((result, throwable) -> {
@@ -2735,7 +2735,7 @@ public class MainController implements Initializable {
         if (!confirmed) return;
         
         showLoading(true);
-        updateStatus("Updating broker configuration");
+        updateStatus("Updating broker configuration!");
         
         Map<String, String> configUpdate = new HashMap<>();
         configUpdate.put(propertyName, newValue);
@@ -2827,7 +2827,7 @@ public class MainController implements Initializable {
         if (!confirmed) return;
         
         showLoading(true);
-        updateStatus("Updating cluster configuration");
+        updateStatus("Updating cluster configuration!");
         
         Map<String, String> configUpdate = new HashMap<>();
         configUpdate.put(propertyName, newValue);
