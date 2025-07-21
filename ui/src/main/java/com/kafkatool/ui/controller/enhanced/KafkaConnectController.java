@@ -1,4 +1,4 @@
-package com.kafkatool.controller.enhanced;
+package com.kafkatool.ui.controller.enhanced;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;

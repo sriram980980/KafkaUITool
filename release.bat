@@ -4,7 +4,7 @@ echo Kafka UI Tool - Release Script
 echo ========================================
 
 REM Check if Java 17+ is available (required for jpackage)
-java -version 2>&1 | findstr "17\|18\|19\|20\|21" >nul
+java -version 2>&1 | findstr "java" >nul
 if %errorlevel% neq 0 (
     echo ERROR: Java 17+ is required for jpackage
     echo Please install Java 17+ and ensure it's in your PATH
@@ -16,7 +16,7 @@ REM Check if jpackage is available
 jpackage --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: jpackage is not available
-    echo Please ensure you're using a full JDK (not JRE) with jpackage support
+    echo Please ensure you're using a full JDK  with jpackage support
     pause
     exit /b 1
 )
