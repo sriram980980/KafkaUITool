@@ -58,4 +58,17 @@ public class TopicInfo {
     public String toString() {
         return name != null ? name : "Unnamed Topic";
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        TopicInfo that = (TopicInfo) obj;
+        return java.util.Objects.equals(name, that.name);
+    }
+    
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(name);
+    }
 }

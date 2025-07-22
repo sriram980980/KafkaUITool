@@ -1,4 +1,4 @@
-package com.kafkatool.controller.enhanced;
+package com.kafkatool.ui.controller.enhanced;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -95,21 +95,27 @@ public class KafkaConnectController {
         
         connectService.testConnectionAsync(url)
             .thenAccept(connected -> {
-                if (connected) {
-                    statusLabel.setText("Connected");
-                    connectorDetailsPane.setDisable(false);
-                    loadClusterInfo();
-                    loadConnectors();
-                } else {
-                    statusLabel.setText("Connection failed");
-                }
+                javafx.application.Platform.runLater(() -> {
+                    if (connected) {
+                        statusLabel.setText("Connected");
+                        connectorDetailsPane.setDisable(false);
+                        loadClusterInfo();
+                        loadConnectors();
+                    } else {
+                        statusLabel.setText("Connection failed");
+                    }
+                });
             })
             .exceptionally(throwable -> {
-                statusLabel.setText("Connection error: " + throwable.getMessage());
+                javafx.application.Platform.runLater(() -> {
+                    statusLabel.setText("Connection error: " + throwable.getMessage());
+                });
                 return null;
             })
             .whenComplete((result, throwable) -> {
-                connectButton.setDisable(false);
+                javafx.application.Platform.runLater(() -> {
+                    connectButton.setDisable(false);
+                });
             });
     }
     
@@ -118,12 +124,16 @@ public class KafkaConnectController {
         
         connectService.getClusterInfoAsync(url)
             .thenAccept(clusterInfo -> {
-                String version = (String) clusterInfo.get("version");
-                String commit = (String) clusterInfo.get("commit");
-                clusterInfoLabel.setText(String.format("Kafka Connect %s (commit: %s)", version, commit));
+                javafx.application.Platform.runLater(() -> {
+                    String version = (String) clusterInfo.get("version");
+                    String commit = (String) clusterInfo.get("commit");
+                    clusterInfoLabel.setText(String.format("Kafka Connect %s (commit: %s)", version, commit));
+                });
             })
             .exceptionally(throwable -> {
-                clusterInfoLabel.setText("Unable to load cluster info");
+                javafx.application.Platform.runLater(() -> {
+                    clusterInfoLabel.setText("Unable to load cluster info");
+                });
                 return null;
             });
     }
@@ -133,11 +143,15 @@ public class KafkaConnectController {
         
         connectService.getConnectorsAsync(url)
             .thenAccept(connectorList -> {
-                connectors.clear();
-                connectors.addAll(connectorList);
+                javafx.application.Platform.runLater(() -> {
+                    connectors.clear();
+                    connectors.addAll(connectorList);
+                });
             })
             .exceptionally(throwable -> {
-                showError("Failed to load connectors: " + throwable.getMessage());
+                javafx.application.Platform.runLater(() -> {
+                    showError("Failed to load connectors: " + throwable.getMessage());
+                });
                 return null;
             });
     }
@@ -150,13 +164,17 @@ public class KafkaConnectController {
         
         connectService.getConnectorConfigAsync(url, connectorName)
             .thenAccept(config -> {
-                StringBuilder configText = new StringBuilder();
-                config.forEach((key, value) -> 
-                    configText.append(key).append("=").append(value).append("\n"));
-                connectorConfigArea.setText(configText.toString());
+                javafx.application.Platform.runLater(() -> {
+                    StringBuilder configText = new StringBuilder();
+                    config.forEach((key, value) -> 
+                        configText.append(key).append("=").append(value).append("\n"));
+                    connectorConfigArea.setText(configText.toString());
+                });
             })
             .exceptionally(throwable -> {
-                connectorConfigArea.setText("Failed to load configuration: " + throwable.getMessage());
+                javafx.application.Platform.runLater(() -> {
+                    connectorConfigArea.setText("Failed to load configuration: " + throwable.getMessage());
+                });
                 return null;
             });
     }
@@ -297,11 +315,15 @@ public class KafkaConnectController {
                 
                 connectService.deleteConnectorAsync(url, connectorName)
                     .thenRun(() -> {
-                        showInfo("Connector '" + connectorName + "' deleted successfully");
-                        loadConnectors();
+                        javafx.application.Platform.runLater(() -> {
+                            showInfo("Connector '" + connectorName + "' deleted successfully");
+                            loadConnectors();
+                        });
                     })
                     .exceptionally(throwable -> {
-                        showError("Failed to delete connector: " + throwable.getMessage());
+                        javafx.application.Platform.runLater(() -> {
+                            showError("Failed to delete connector: " + throwable.getMessage());
+                        });
                         return null;
                     });
             }
@@ -318,21 +340,29 @@ public class KafkaConnectController {
         if ("RUNNING".equals(status)) {
             connectService.pauseConnectorAsync(url, connectorName)
                 .thenRun(() -> {
-                    showInfo("Connector '" + connectorName + "' paused successfully");
-                    loadConnectors();
+                    javafx.application.Platform.runLater(() -> {
+                        showInfo("Connector '" + connectorName + "' paused successfully");
+                        loadConnectors();
+                    });
                 })
                 .exceptionally(throwable -> {
-                    showError("Failed to pause connector: " + throwable.getMessage());
+                    javafx.application.Platform.runLater(() -> {
+                        showError("Failed to pause connector: " + throwable.getMessage());
+                    });
                     return null;
                 });
         } else if ("PAUSED".equals(status)) {
             connectService.resumeConnectorAsync(url, connectorName)
                 .thenRun(() -> {
-                    showInfo("Connector '" + connectorName + "' resumed successfully");
-                    loadConnectors();
+                    javafx.application.Platform.runLater(() -> {
+                        showInfo("Connector '" + connectorName + "' resumed successfully");
+                        loadConnectors();
+                    });
                 })
                 .exceptionally(throwable -> {
-                    showError("Failed to resume connector: " + throwable.getMessage());
+                    javafx.application.Platform.runLater(() -> {
+                        showError("Failed to resume connector: " + throwable.getMessage());
+                    });
                     return null;
                 });
         }
@@ -346,11 +376,15 @@ public class KafkaConnectController {
         
         connectService.restartConnectorAsync(url, connectorName)
             .thenRun(() -> {
-                showInfo("Connector '" + connectorName + "' restarted successfully");
-                loadConnectors();
+                javafx.application.Platform.runLater(() -> {
+                    showInfo("Connector '" + connectorName + "' restarted successfully");
+                    loadConnectors();
+                });
             })
             .exceptionally(throwable -> {
-                showError("Failed to restart connector: " + throwable.getMessage());
+                javafx.application.Platform.runLater(() -> {
+                    showError("Failed to restart connector: " + throwable.getMessage());
+                });
                 return null;
             });
     }

@@ -29,7 +29,7 @@ echo "Step 1: Building all modules"
 echo "========================================"
 
 # Clean and build all modules
-./mvnw clean install -pl commons,service -DskipTests
+./mvnw clean package -DskipTests
 
 echo "✓ All modules built successfully"
 
@@ -44,6 +44,13 @@ SERVICE_JAR=$(ls $RELEASE_DIR/kafka-ui-service-*-jar-with-dependencies.jar | hea
 SERVICE_JAR_NAME=$(basename "$SERVICE_JAR")
 
 echo "✓ Service JAR: $SERVICE_JAR_NAME"
+
+# Copy UI JAR  
+cp ui/target/kafka-ui-application-*-jar-with-dependencies.jar "$RELEASE_DIR/"
+UI_JAR=$(ls $RELEASE_DIR/kafka-ui-application-*-jar-with-dependencies.jar | head -1)
+UI_JAR_NAME=$(basename "$UI_JAR")
+
+echo "✓ UI JAR: $UI_JAR_NAME"
 
 # Test the service JAR
 echo ""
@@ -73,9 +80,23 @@ echo Starting Kafka UI Tool Service
 java -jar kafka-ui-service-2.0.0-jar-with-dependencies.jar %*
 EOF
 
-chmod +x "$RELEASE_DIR/start-service.sh"
+cat > "$RELEASE_DIR/start-ui.sh" << 'EOF'
+#!/bin/bash
+# Start Kafka UI Tool Application
+echo "Starting Kafka UI Tool Application"
+java -jar kafka-ui-application-*-jar-with-dependencies.jar "$@"
+EOF
 
-echo "✓ Created start-service.sh and start-service.bat"
+cat > "$RELEASE_DIR/start-ui.bat" << 'EOF'
+@echo off
+echo Starting Kafka UI Tool Application
+java -jar kafka-ui-application-2.0.0-jar-with-dependencies.jar %*
+EOF
+
+chmod +x "$RELEASE_DIR/start-service.sh"
+chmod +x "$RELEASE_DIR/start-ui.sh"
+
+echo "✓ Created startup scripts for both service and UI"
 
 # Create README for release
 cat > "$RELEASE_DIR/README.md" << EOF
@@ -84,10 +105,23 @@ cat > "$RELEASE_DIR/README.md" << EOF
 ## Contents
 
 - \`$SERVICE_JAR_NAME\` - Standalone service with REST API
-- \`start-service.sh\` - Linux/macOS startup script
-- \`start-service.bat\` - Windows startup script
+- \`$UI_JAR_NAME\` - Desktop GUI application
+- \`start-service.sh\` / \`start-service.bat\` - Service startup scripts  
+- \`start-ui.sh\` / \`start-ui.bat\` - UI application startup scripts
 
 ## Quick Start
+
+### Desktop GUI Application
+\`\`\`bash
+# Linux/macOS
+./start-ui.sh
+
+# Windows
+start-ui.bat
+
+# Or directly with Java
+java -jar $UI_JAR_NAME
+\`\`\`
 
 ### Service Mode (REST API)
 \`\`\`bash
@@ -105,23 +139,31 @@ The REST API will be available at http://localhost:8080
 
 ### Command Line Options
 \`\`\`bash
-# Custom port
+# Custom port for service
 ./start-service.sh --port 9090
 
-# Help
+# Help for service
 ./start-service.sh --help
 \`\`\`
 
 ## Requirements
 - Java 17 or higher
 - Apache Kafka cluster (for connections)
+- For GUI: Desktop environment with display (not needed for service mode)
 
 ## Architecture
 This release includes:
 - **Commons Module**: Shared models and services
-- **Service Module**: REST API server (headless, no JavaFX required)
+- **UI Module**: JavaFX desktop application with fat jar support
+- **Service Module**: REST API server (headless, no display required)
 
 The service can run in containerized environments without GUI dependencies.
+Both applications are self-contained fat jars with all dependencies included.
+
+## Production Notes
+- Use at your own risk, no warranty provided
+- Suitable for development and testing environments
+- For production use, review security and configure appropriately
 EOF
 
 echo "✓ Created release README.md"

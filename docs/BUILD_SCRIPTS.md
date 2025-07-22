@@ -110,8 +110,7 @@ build.bat
 build.bat
 
 # Run the application
-cd kafka-ui-java
-java -jar target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar
+java -jar ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar
 ```
 
 ### For Release Managers
@@ -152,7 +151,6 @@ release.ps1
 - These scripts are designed for Windows
 - For Linux/macOS, use the Maven commands directly:
   ```bash
-  cd kafka-ui-java
   ./mvnw clean package
   ```
 

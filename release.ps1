@@ -30,30 +30,37 @@ try {
     exit 1
 }
 
-# Change to the Java project directory
+# Check if we're in the correct directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$javaProjectDir = Join-Path $scriptDir "kafka-ui-java"
 
-if (-not (Test-Path (Join-Path $javaProjectDir "pom.xml"))) {
-    Write-Host "✗ ERROR: pom.xml not found in kafka-ui-java directory" -ForegroundColor Red
+if (-not (Test-Path (Join-Path $scriptDir "pom.xml"))) {
+    Write-Host "✗ ERROR: pom.xml not found in project root directory" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-Set-Location $javaProjectDir
+Set-Location $scriptDir
 
 Write-Host ""
-Write-Host "Step 1: Building JAR with dependencies" -ForegroundColor Yellow
-& .\mvnw.cmd clean package
+Write-Host "Step 1: Building all modules" -ForegroundColor Yellow
+& .\mvnw.cmd clean package -DskipTests
 if ($LASTEXITCODE -ne 0) {
     Write-Host "✗ ERROR: Maven build failed" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-$jarFile = "target\kafka-ui-tool-2.0.0-jar-with-dependencies.jar"
-if (-not (Test-Path $jarFile)) {
-    Write-Host "✗ ERROR: JAR file not found after build" -ForegroundColor Red
+$uiJarFile = "ui\target\kafka-ui-application-2.0.0-jar-with-dependencies.jar"
+$serviceJarFile = "service\target\kafka-ui-service-2.0.0-jar-with-dependencies.jar"
+
+if (-not (Test-Path $uiJarFile)) {
+    Write-Host "✗ ERROR: UI JAR file not found after build" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+
+if (-not (Test-Path $serviceJarFile)) {
+    Write-Host "✗ ERROR: Service JAR file not found after build" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
@@ -74,10 +81,10 @@ Write-Host "Step 3: Creating Windows executable with embedded JRE" -ForegroundCo
 
 # Create the jpackage command
 $jpackageArgs = @(
-    "--input", "target"
+    "--input", "ui\target"
     "--name", "KafkaUITool"
-    "--main-jar", "kafka-ui-tool-2.0.0-jar-with-dependencies.jar"
-    "--main-class", "com.kafkatool.KafkaUIApplication"
+    "--main-jar", "kafka-ui-application-2.0.0-jar-with-dependencies.jar"
+    "--main-class", "com.kafkatool.ui.Main"
     "--type", "exe"
     "--dest", $releaseDir
     "--app-version", "2.0.0"
@@ -106,17 +113,27 @@ Set-Location $releaseDir
 $portableDir = "KafkaUITool-2.0.0-portable"
 New-Item -ItemType Directory -Path $portableDir | Out-Null
 
-# Copy JAR file
-Copy-Item (Join-Path $javaProjectDir $jarFile) $portableDir
+# Copy JAR files
+Copy-Item (Join-Path $scriptDir $uiJarFile) $portableDir
+Copy-Item (Join-Path $scriptDir $serviceJarFile) $portableDir
 
-# Create run.bat for portable version
-$runBatContent = @"
+# Create run-ui.bat for portable version
+$runUiBatContent = @"
 @echo off
-echo Starting Kafka UI Tool
-java -jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar
+echo Starting Kafka UI Tool GUI
+java -jar kafka-ui-application-2.0.0-jar-with-dependencies.jar
 pause
 "@
-$runBatContent | Out-File -FilePath (Join-Path $portableDir "run.bat") -Encoding ASCII
+$runUiBatContent | Out-File -FilePath (Join-Path $portableDir "run-ui.bat") -Encoding ASCII
+
+# Create run-service.bat for portable version
+$runServiceBatContent = @"
+@echo off
+echo Starting Kafka UI Tool Service
+java -jar kafka-ui-service-2.0.0-jar-with-dependencies.jar --api-server
+pause
+"@
+$runServiceBatContent | Out-File -FilePath (Join-Path $portableDir "run-service.bat") -Encoding ASCII
 
 # Create README for portable version
 $readmeContent = @"
@@ -125,10 +142,15 @@ Kafka UI Tool - Portable Version
 Requirements:
 - Java 17+ installed and in PATH
 
-To run:
-1. Double-click run.bat
+To run GUI application:
+1. Double-click run-ui.bat
 OR
-2. Run: java -jar kafka-ui-tool-2.0.0-jar-with-dependencies.jar
+2. Run: java -jar kafka-ui-application-2.0.0-jar-with-dependencies.jar
+
+To run service mode:
+1. Double-click run-service.bat
+OR
+2. Run: java -jar kafka-ui-service-2.0.0-jar-with-dependencies.jar --api-server
 "@
 $readmeContent | Out-File -FilePath (Join-Path $portableDir "README.txt") -Encoding UTF8
 

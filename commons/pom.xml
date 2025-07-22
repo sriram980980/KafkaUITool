@@ -40,6 +40,13 @@
             <artifactId>logback-classic</artifactId>
         </dependency>
 
+        <!-- JavaFX Properties for UI compatibility -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
         <!-- Schema Registry and Serialization -->
         <dependency>
             <groupId>org.apache.avro</groupId>

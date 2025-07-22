@@ -5,7 +5,7 @@
 
 # Set script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$SCRIPT_DIR/kafka-ui-java"
+PROJECT_DIR="$SCRIPT_DIR"
 
 # Colors for output
 RED='\033[0;31m'
@@ -46,13 +46,17 @@ check_java() {
 
 # Check if Maven is installed
 check_maven() {
-    if ! command -v mvn &> /dev/null; then
-        print_error "Maven is not installed or not in PATH"
+    if ! command -v ./mvnw &> /dev/null && ! command -v mvn &> /dev/null; then
+        print_error "Maven is not installed or not in PATH, and mvnw is not available"
         print_info "Please install Maven 3.6+ and try again"
         exit 1
     fi
     
-    print_info "Maven detected"
+    if command -v ./mvnw &> /dev/null; then
+        print_info "Maven wrapper detected"
+    else
+        print_info "Maven detected"
+    fi
 }
 
 # Build the project
@@ -60,9 +64,17 @@ build_project() {
     print_info "Building Kafka UI Tool"
     cd "$PROJECT_DIR" || exit 1
     
-    if ! mvn clean package -DskipTests; then
-        print_error "Build failed"
-        exit 1
+    # Use Maven wrapper if available, otherwise use system Maven
+    if command -v ./mvnw &> /dev/null; then
+        if ! ./mvnw clean package -DskipTests; then
+            print_error "Build failed"
+            exit 1
+        fi
+    else
+        if ! mvn clean package -DskipTests; then
+            print_error "Build failed"
+            exit 1
+        fi
     fi
     
     print_info "Build completed successfully"
@@ -74,15 +86,17 @@ run_application() {
     cd "$PROJECT_DIR" || exit 1
     
     # Try to run with JavaFX Maven plugin first
-    if command -v mvn &> /dev/null; then
-        mvn javafx:run
+    if command -v ./mvnw &> /dev/null; then
+        ./mvnw javafx:run -pl ui
+    elif command -v mvn &> /dev/null; then
+        mvn javafx:run -pl ui
     else
         # Fallback to direct Java execution
-        JAR_FILE="target/kafka-ui-tool-2.0.0-jar-with-dependencies.jar"
-        if [ -f "$JAR_FILE" ]; then
-            java -jar "$JAR_FILE"
+        UI_JAR_FILE="ui/target/kafka-ui-application-2.0.0-jar-with-dependencies.jar"
+        if [ -f "$UI_JAR_FILE" ]; then
+            java -jar "$UI_JAR_FILE"
         else
-            print_error "JAR file not found. Please run './run.sh build' first"
+            print_error "UI JAR file not found. Please run './run.sh build' first"
             exit 1
         fi
     fi
@@ -92,7 +106,12 @@ run_application() {
 clean_project() {
     print_info "Cleaning build artifacts"
     cd "$PROJECT_DIR" || exit 1
-    mvn clean
+    
+    if command -v ./mvnw &> /dev/null; then
+        ./mvnw clean
+    else
+        mvn clean
+    fi
     print_info "Clean completed"
 }
 
@@ -118,7 +137,12 @@ show_help() {
 run_tests() {
     print_info "Running tests"
     cd "$PROJECT_DIR" || exit 1
-    mvn test
+    
+    if command -v ./mvnw &> /dev/null; then
+        ./mvnw test
+    else
+        mvn test
+    fi
 }
 
 # Main script logic

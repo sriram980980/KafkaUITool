@@ -1,8 +1,8 @@
 package com.kafkatool.ui.controller;
 
 import com.kafkatool.model.*;
-import com.kafkatool.service.KafkaService;
-import com.kafkatool.service.KafkaServiceImpl;
+import com.kafkatool.service.EnhancedKafkaService;
+import com.kafkatool.service.EnhancedKafkaServiceImpl;
 import com.kafkatool.ui.DialogHelper;
 import com.kafkatool.util.JsonFormatter;
 import com.kafkatool.util.SettingsManager;
@@ -40,7 +40,7 @@ public class MainController implements Initializable {
     private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
     // Services
-    private final KafkaService kafkaService = new KafkaServiceImpl();
+    private final EnhancedKafkaService kafkaService = new EnhancedKafkaServiceImpl();
     private final SettingsManager settingsManager = new SettingsManager();
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     
@@ -1773,6 +1773,12 @@ public class MainController implements Initializable {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/" + fxmlPath));
             javafx.scene.Parent root = loader.load();
+            
+            // Get the controller and inject the kafka service if it's a MetricsDashboardController
+            Object controller = loader.getController();
+            if (controller instanceof com.kafkatool.ui.controller.enhanced.MetricsDashboardController) {
+                ((com.kafkatool.ui.controller.enhanced.MetricsDashboardController) controller).setKafkaService(kafkaService);
+            }
             
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.setTitle(title);

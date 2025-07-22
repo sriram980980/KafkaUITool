@@ -1,61 +1,73 @@
 package com.kafkatool.model;
 
+import javafx.beans.property.*;
 import java.util.Map;
 
 /**
  * Model class representing connector information
  */
 public class ConnectorInfo {
-    private String name;
-    private String type;
-    private String state;
-    private String status; // alias for state
-    private String workerUrl;
+    private StringProperty name = new SimpleStringProperty();
+    private StringProperty type = new SimpleStringProperty();
+    private StringProperty state = new SimpleStringProperty();
+    private StringProperty status = new SimpleStringProperty(); // alias for state
+    private StringProperty workerUrl = new SimpleStringProperty();
     private Map<String, String> config;
-    private String errorMessage;
-    private String className;
-    private int tasksRunning;
+    private StringProperty errorMessage = new SimpleStringProperty();
+    private StringProperty className = new SimpleStringProperty();
+    private IntegerProperty tasksRunning = new SimpleIntegerProperty();
     
     public ConnectorInfo() {}
     
     public ConnectorInfo(String name, String type, String state) {
-        this.name = name;
-        this.type = type;
-        this.state = state;
-        this.status = state;
+        setName(name);
+        setType(type);
+        setState(state);
     }
     
-    // Getters and setters
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    // JavaFX Property methods
+    public StringProperty nameProperty() { return name; }
+    public StringProperty typeProperty() { return type; }
+    public StringProperty stateProperty() { return state; }
+    public StringProperty statusProperty() { return status; }
+    public StringProperty workerUrlProperty() { return workerUrl; }
+    public StringProperty errorMessageProperty() { return errorMessage; }
+    public StringProperty classNameProperty() { return className; }
+    public IntegerProperty tasksRunningProperty() { return tasksRunning; }
     
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    // Regular getters and setters
+    public String getName() { return name.get(); }
+    public void setName(String name) { 
+        this.name.set(name); 
+    }
     
-    public String getState() { return state; }
+    public String getType() { return type.get(); }
+    public void setType(String type) { this.type.set(type); }
+    
+    public String getState() { return state.get(); }
     public void setState(String state) { 
-        this.state = state; 
-        this.status = state;
+        this.state.set(state); 
+        this.status.set(state);
     }
     
-    public String getStatus() { return status; }
+    public String getStatus() { return status.get(); }
     public void setStatus(String status) { 
-        this.status = status; 
-        this.state = status;
+        this.status.set(status); 
+        this.state.set(status);
     }
     
-    public String getWorkerUrl() { return workerUrl; }
-    public void setWorkerUrl(String workerUrl) { this.workerUrl = workerUrl; }
+    public String getWorkerUrl() { return workerUrl.get(); }
+    public void setWorkerUrl(String workerUrl) { this.workerUrl.set(workerUrl); }
     
     public Map<String, String> getConfig() { return config; }
     public void setConfig(Map<String, String> config) { this.config = config; }
     
-    public String getErrorMessage() { return errorMessage; }
-    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+    public String getErrorMessage() { return errorMessage.get(); }
+    public void setErrorMessage(String errorMessage) { this.errorMessage.set(errorMessage); }
     
-    public String getClassName() { return className; }
-    public void setClassName(String className) { this.className = className; }
+    public String getClassName() { return className.get(); }
+    public void setClassName(String className) { this.className.set(className); }
     
-    public int getTasksRunning() { return tasksRunning; }
-    public void setTasksRunning(int tasksRunning) { this.tasksRunning = tasksRunning; }
+    public int getTasksRunning() { return tasksRunning.get(); }
+    public void setTasksRunning(int tasksRunning) { this.tasksRunning.set(tasksRunning); }
 }

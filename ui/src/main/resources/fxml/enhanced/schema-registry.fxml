@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.kafkatool.controller.enhanced.SchemaRegistryController">
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.kafkatool.ui.controller.enhanced.SchemaRegistryController">
    <children>
       <HBox alignment="CENTER_LEFT" spacing="10.0">
          <children>

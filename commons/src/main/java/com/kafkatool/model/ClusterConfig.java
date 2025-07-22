@@ -78,4 +78,8 @@ public class ClusterConfig {
     
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+    
+    // Alias method for UI compatibility
+    public String getDescription() { return documentation; }
+    public void setDescription(String description) { this.documentation = description; }
 }

@@ -33,4 +33,7 @@ public class BrokerInfo {
     
     public boolean isController() { return controller; }
     public void setController(boolean controller) { this.controller = controller; }
+    
+    // Method expected by UI - placeholder for broker version info
+    public String getVersion() { return "N/A"; }
 }
