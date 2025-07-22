@@ -6,7 +6,9 @@
 ## 🚀 New Java/JavaFX Implementation
 
 The tool has been completely rewritten in Java using JavaFX for cross-platform compatibility and modern UI design.
-
+![Main Interface1](docs/img.png)
+![Main Interface2](docs/img_1.png)
+![Main Interface3](docs/img_2.png)
 ![Main Interface](docs/image.png)
 ![Cluster Management](docs/image-1.png)
 ![Topic Operations](docs/image-2.png)
