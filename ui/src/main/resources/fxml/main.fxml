@@ -130,6 +130,13 @@
                      <content>
                         <VBox spacing="5">
                            <children>
+                              <!-- LLM Provider Selection -->
+                              <HBox alignment="CENTER_LEFT" spacing="5">
+                                 <children>
+                                    <Label text="LLM Provider:" styleClass="form-label" />
+                                    <ComboBox fx:id="llmProviderComboBox" promptText="Select LLM Provider" styleClass="provider-combo" HBox.hgrow="ALWAYS" />
+                                 </children>
+                              </HBox>
                               <TextArea fx:id="chatMessagesArea" editable="false" prefHeight="150" wrapText="true" styleClass="chat-messages" promptText="Chat messages will appear here" />
                               <HBox alignment="CENTER_LEFT" spacing="5">
                                  <children>
