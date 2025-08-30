@@ -1,6 +1,7 @@
 package com.kafkatool.ui.controller;
 
 import com.kafkatool.model.*;
+import com.kafkatool.model.LLMProviderInfo;
 import com.kafkatool.service.EnhancedKafkaService;
 import com.kafkatool.service.EnhancedKafkaServiceImpl;
 import com.kafkatool.ui.DialogHelper;
@@ -49,10 +50,12 @@ public class MainController implements Initializable {
     private final ObservableList<TopicInfo> topics = FXCollections.observableArrayList();
     private final FilteredList<TopicInfo> filteredTopics = new FilteredList<>(topics);
     private final ObservableList<KafkaMessage> messages = FXCollections.observableArrayList();
+    private final ObservableList<LLMProviderInfo> llmProviders = FXCollections.observableArrayList();
     
     // Current state
     private ClusterInfo currentCluster;
     private TopicInfo currentTopic;
+    private LLMProviderInfo currentLLMProvider;
     
     // FXML Menu Items
     @FXML private MenuItem addClusterMenuItem;
@@ -97,6 +100,7 @@ public class MainController implements Initializable {
     @FXML private Button deleteTopicButtonSide;
     
     // FXML Controls - Chat Section
+    @FXML private ComboBox<LLMProviderInfo> llmProviderComboBox;
     @FXML private TextArea chatMessagesArea;
     @FXML private TextField chatInputField;
     @FXML private Button sendChatButton;
@@ -285,13 +289,26 @@ public class MainController implements Initializable {
     }
     
     private void setupChatSection() {
+        // Configure LLM provider dropdown
+        llmProviderComboBox.setItems(llmProviders);
+        llmProviderComboBox.getSelectionModel().selectedItemProperty().addListener(
+            (obs, oldProvider, newProvider) -> {
+                currentLLMProvider = newProvider;
+                if (newProvider != null) {
+                    // Update connection button based on provider selection
+                    updateChatConnectionButton();
+                    updateStatus("Selected LLM provider: " + newProvider.toString());
+                }
+            }
+        );
+        
         // Set initial state
         chatMessagesArea.setEditable(false);
         chatMessagesArea.setWrapText(true);
         
         // Add welcome message
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-        String welcomeMessage = String.format("[%s] System: Chat section initialized. Click 'Connect' to start chatting.%n", timestamp);
+        String welcomeMessage = String.format("[%s] System: Chat section initialized. Select an LLM provider and click 'Connect' to start chatting.%n", timestamp);
         chatMessagesArea.setText(welcomeMessage);
         
         // Setup Enter key handler for chat input
@@ -305,6 +322,7 @@ public class MainController implements Initializable {
         // Initial button state
         connectChatButton.setText("Connect");
         connectChatButton.setStyle("-fx-background-color: #4a90e2; -fx-text-fill: white;");
+        connectChatButton.setDisable(true); // Disable until provider is selected
     }
     
     private void setupStatusBar() {
@@ -436,6 +454,26 @@ public class MainController implements Initializable {
             List<ClusterInfo> savedClusters = settingsManager.loadClusters();
             clusters.addAll(savedClusters);
             
+            // Load LLM providers
+            List<LLMProviderInfo> savedProviders = settingsManager.loadLLMProviders();
+            llmProviders.addAll(savedProviders);
+            
+            // Auto-select default LLM provider (not hardcoded to ollama anymore)
+            Optional<LLMProviderInfo> defaultProvider = savedProviders.stream()
+                .filter(LLMProviderInfo::isDefault)
+                .findFirst();
+                
+            if (defaultProvider.isPresent()) {
+                Platform.runLater(() -> {
+                    llmProviderComboBox.getSelectionModel().select(defaultProvider.get());
+                });
+            } else if (!savedProviders.isEmpty()) {
+                // If no default is set, select the first provider
+                Platform.runLater(() -> {
+                    llmProviderComboBox.getSelectionModel().selectFirst();
+                });
+            }
+
             // Auto-connect to default cluster if any
             Optional<ClusterInfo> defaultCluster = savedClusters.stream()
                 .filter(ClusterInfo::isConnectByDefault)
@@ -448,7 +486,7 @@ public class MainController implements Initializable {
                 });
             }
             
-            logger.info("Loaded {} clusters from settings", savedClusters.size());
+            logger.info("Loaded {} clusters and {} LLM providers from settings", savedClusters.size(), savedProviders.size());
         } catch (Exception e) {
             logger.error("Failed to load settings", e);
             updateStatus("Failed to load settings: " + e.getMessage());
@@ -458,6 +496,7 @@ public class MainController implements Initializable {
     private void saveSettings() {
         try {
             settingsManager.saveClusters(new ArrayList<>(clusters));
+            settingsManager.saveLLMProviders(new ArrayList<>(llmProviders));
             logger.info("Settings saved successfully");
         } catch (Exception e) {
             logger.error("Failed to save settings", e);
@@ -2868,7 +2907,7 @@ public class MainController implements Initializable {
     @FXML
     private void onSendChatMessage() {
         String message = chatInputField.getText().trim();
-        if (!message.isEmpty()) {
+        if (!message.isEmpty() && currentLLMProvider != null && currentLLMProvider.isConnected()) {
             // Add timestamp and format the message
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             String formattedMessage = String.format("[%s] You: %s%n", timestamp, message);
@@ -2882,16 +2921,21 @@ public class MainController implements Initializable {
             // Auto-scroll to bottom
             chatMessagesArea.positionCaret(chatMessagesArea.getLength());
             
-            updateStatus("Chat message sent");
+            updateStatus("Chat message sent to " + currentLLMProvider.getMapKey());
             
-            // Simulate a simple echo response after a short delay
+            // Simulate a provider-specific response after a short delay
             CompletableFuture.delayedExecutor(1, java.util.concurrent.TimeUnit.SECONDS)
                 .execute(() -> Platform.runLater(() -> {
                     String responseTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-                    String response = String.format("[%s] System: Message received: %s%n", responseTime, message);
+                    String response = String.format("[%s] %s: Message received: %s%n", 
+                        responseTime, currentLLMProvider.getMapKey(), message);
                     chatMessagesArea.appendText(response);
                     chatMessagesArea.positionCaret(chatMessagesArea.getLength());
                 }));
+        } else if (currentLLMProvider == null) {
+            updateStatus("Please select an LLM provider first");
+        } else if (!currentLLMProvider.isConnected()) {
+            updateStatus("Please connect to the LLM provider first");
         }
     }
     
@@ -2911,28 +2955,60 @@ public class MainController implements Initializable {
     
     @FXML
     private void onConnectChat() {
+        if (currentLLMProvider == null) {
+            DialogHelper.showErrorDialog("No LLM Provider Selected", "Selection Required", 
+                "Please select an LLM provider before connecting to chat.");
+            return;
+        }
+        
         if (connectChatButton.getText().equals("Connect")) {
-            // Simulate chat connection
+            // Connect to selected LLM provider (not hardcoded to ollama anymore)
             connectChatButton.setText("Disconnect");
             connectChatButton.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
             
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            String welcomeMessage = String.format("[%s] System: Connected to chat. Welcome!%n", timestamp);
+            String welcomeMessage = String.format("[%s] System: Connected to %s. Welcome!%n", 
+                timestamp, currentLLMProvider.toString());
             chatMessagesArea.appendText(welcomeMessage);
             chatMessagesArea.positionCaret(chatMessagesArea.getLength());
             
-            updateStatus("Connected to chat");
+            // Mark provider as connected
+            currentLLMProvider.setConnected(true);
+            
+            updateStatus("Connected to " + currentLLMProvider.toString());
         } else {
-            // Simulate chat disconnection
+            // Disconnect from LLM provider
             connectChatButton.setText("Connect");
             connectChatButton.setStyle("-fx-background-color: #4a90e2; -fx-text-fill: white;");
             
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            String disconnectMessage = String.format("[%s] System: Disconnected from chat.%n", timestamp);
+            String disconnectMessage = String.format("[%s] System: Disconnected from %s.%n", 
+                timestamp, currentLLMProvider.toString());
             chatMessagesArea.appendText(disconnectMessage);
             chatMessagesArea.positionCaret(chatMessagesArea.getLength());
             
-            updateStatus("Disconnected from chat");
+            // Mark provider as disconnected
+            currentLLMProvider.setConnected(false);
+            
+            updateStatus("Disconnected from " + currentLLMProvider.toString());
+        }
+    }
+    
+    /**
+     * Update chat connection button state based on selected provider
+     */
+    private void updateChatConnectionButton() {
+        boolean hasProvider = currentLLMProvider != null;
+        connectChatButton.setDisable(!hasProvider);
+        
+        if (hasProvider) {
+            if (currentLLMProvider.isConnected()) {
+                connectChatButton.setText("Disconnect");
+                connectChatButton.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+            } else {
+                connectChatButton.setText("Connect");
+                connectChatButton.setStyle("-fx-background-color: #4a90e2; -fx-text-fill: white;");
+            }
         }
     }
     

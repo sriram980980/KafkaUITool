@@ -53,7 +53,7 @@ public class KafkaServiceImpl implements KafkaService {
                 logger.info("Successfully connected to Kafka cluster at {}", brokerUrls);
                 return true;
             } catch (Exception e) {
-                logger.error("Failed to connect to Kafka cluster at {}: {}", brokerUrls, e.getMessage());
+                logger.error("Failed to connect to Kafka cluster at {}", brokerUrls, e);
                 return false;
             }
         });
@@ -70,7 +70,7 @@ public class KafkaServiceImpl implements KafkaService {
                 String clusterId = result.clusterId().get();
                 return "Cluster ID: " + clusterId;
             } catch (Exception e) {
-                logger.error("Failed to get Kafka version: {}", e.getMessage());
+                logger.error("Failed to get Kafka version", e);
                 return "Unknown";
             }
         });
@@ -105,7 +105,7 @@ public class KafkaServiceImpl implements KafkaService {
                 logger.info("Retrieved {} topics from cluster", topics.size());
                 return topics;
             } catch (Exception e) {
-                logger.error("Failed to get topics: {}", e.getMessage());
+                logger.error("Failed to get topics", e);
                 return new ArrayList<>();
             }
         });
@@ -124,7 +124,7 @@ public class KafkaServiceImpl implements KafkaService {
                 result.all().get();
                 logger.info("Successfully created topic: {}", topicName);
             } catch (Exception e) {
-                logger.error("Failed to create topic {}: {}", topicName, e.getMessage());
+                logger.error("Failed to create topic {}", topicName, e);
                 throw new RuntimeException("Failed to create topic: " + e.getMessage(), e);
             }
         });
@@ -141,7 +141,7 @@ public class KafkaServiceImpl implements KafkaService {
                 result.all().get();
                 logger.info("Successfully deleted topic: {}", topicName);
             } catch (Exception e) {
-                logger.error("Failed to delete topic {}: {}", topicName, e.getMessage());
+                logger.error("Failed to delete topic {}", topicName, e);
                 throw new RuntimeException("Failed to delete topic: " + e.getMessage(), e);
             }
         });
@@ -161,7 +161,7 @@ public class KafkaServiceImpl implements KafkaService {
                 result.all().get();
                 logger.info("Successfully added partitions to topic {}: new count = {}", topicName, newPartitionCount);
             } catch (Exception e) {
-                logger.error("Failed to add partitions to topic {}: {}", topicName, e.getMessage());
+                logger.error("Failed to add partitions to topic {}", topicName, e);
                 throw new RuntimeException("Failed to add partitions to topic: " + e.getMessage(), e);
             }
         });
@@ -186,7 +186,7 @@ public class KafkaServiceImpl implements KafkaService {
                 }
                 return configMap;
             } catch (Exception e) {
-                logger.error("Failed to get topic config for {}: {}", topicName, e.getMessage());
+                logger.error("Failed to get topic config for {}", topicName, e);
                 return new HashMap<>();
             }
         });
@@ -213,7 +213,7 @@ public class KafkaServiceImpl implements KafkaService {
                 result.all().get();
                 logger.info("Successfully updated config for topic: {}", topicName);
             } catch (Exception e) {
-                logger.error("Failed to update topic config for {}: {}", topicName, e.getMessage());
+                logger.error("Failed to update topic config for {}", topicName, e);
                 throw new RuntimeException("Failed to update topic config: " + e.getMessage(), e);
             }
         });
@@ -235,7 +235,7 @@ public class KafkaServiceImpl implements KafkaService {
                     .sorted()
                     .collect(Collectors.toList());
             } catch (Exception e) {
-                logger.error("Failed to get partitions for topic {}: {}", topicName, e.getMessage());
+                logger.error("Failed to get partitions for topic {}", topicName, e);
                 return new ArrayList<>();
             }
         });
@@ -264,8 +264,7 @@ public class KafkaServiceImpl implements KafkaService {
                 
                 return new PartitionOffsets(lowWatermark, highWatermark);
             } catch (Exception e) {
-                logger.error("Failed to get partition offsets for {}:{}: {}", 
-                    topicName, partition, e.getMessage());
+                logger.error("Failed to get partition offsets for {}:{}", topicName, partition, e);
                 return new PartitionOffsets(0, 0);
             }
         });
@@ -308,8 +307,7 @@ public class KafkaServiceImpl implements KafkaService {
                 
                 return messages;
             } catch (Exception e) {
-                logger.error("Failed to get latest messages for {}:{}: {}", 
-                    topicName, partition, e.getMessage());
+                logger.error("Failed to get latest messages for {}:{}", topicName, partition, e);
                 return new ArrayList<>();
             }
         });
@@ -352,8 +350,7 @@ public class KafkaServiceImpl implements KafkaService {
                 
                 return messages;
             } catch (Exception e) {
-                logger.error("Failed to get messages between offsets for {}:{}: {}", 
-                    topicName, partition, e.getMessage());
+                logger.error("Failed to get messages between offsets for {}:{}", topicName, partition, e);
                 return new ArrayList<>();
             }
         });
@@ -379,7 +376,7 @@ public class KafkaServiceImpl implements KafkaService {
                 producer.send(record).get();
                 logger.info("Successfully produced message to {}:{}", topicName, partition);
             } catch (Exception e) {
-                logger.error("Failed to produce message to {}:{}: {}", topicName, partition, e.getMessage());
+                logger.error("Failed to produce message to {}:{}", topicName, partition, e);
                 throw new RuntimeException("Failed to produce message: " + e.getMessage(), e);
             }
         });
@@ -440,7 +437,7 @@ public class KafkaServiceImpl implements KafkaService {
                     matchingMessages.size(), searchPattern, topicName, partition);
                 return matchingMessages;
             } catch (Exception e) {
-                logger.error("Failed to search messages in {}:{}: {}", topicName, partition, e.getMessage());
+                logger.error("Failed to search messages in {}:{}", topicName, partition, e);
                 return new ArrayList<>();
             }
         });
@@ -513,7 +510,7 @@ public class KafkaServiceImpl implements KafkaService {
                 logger.info("Retrieved {} consumer groups", consumerGroups.size());
                 return consumerGroups;
             } catch (Exception e) {
-                logger.error("Failed to get consumer groups: {}", e.getMessage());
+                logger.error("Failed to get consumer groups", e);
                 return new ArrayList<>();
             }
         });
@@ -542,7 +539,7 @@ public class KafkaServiceImpl implements KafkaService {
                 
                 return groupInfo;
             } catch (Exception e) {
-                logger.error("Failed to get consumer group details for {}: {}", groupId, e.getMessage());
+                logger.error("Failed to get consumer group details for {}", groupId, e);
                 return new ConsumerGroupInfo();
             }
         });
@@ -594,7 +591,7 @@ public class KafkaServiceImpl implements KafkaService {
                     groupOffsets.size(), groupId);
                 return groupOffsets;
             } catch (Exception e) {
-                logger.error("Failed to get consumer group offsets for {}: {}", groupId, e.getMessage());
+                logger.error("Failed to get consumer group offsets for {}", groupId, e);
                 return new ArrayList<>();
             }
         });
@@ -637,7 +634,7 @@ public class KafkaServiceImpl implements KafkaService {
                     logger.info("Successfully reset offsets to earliest for consumer group {} on topic {}", groupId, topicName);
                 }
             } catch (Exception e) {
-                logger.error("Failed to reset consumer group offsets for {}:{}: {}", groupId, topicName, e.getMessage());
+                logger.error("Failed to reset consumer group offsets for {}:{}", groupId, topicName, e);
                 throw new RuntimeException("Failed to reset offsets: " + e.getMessage(), e);
             }
         });
@@ -680,7 +677,7 @@ public class KafkaServiceImpl implements KafkaService {
                     logger.info("Successfully reset offsets to latest for consumer group {} on topic {}", groupId, topicName);
                 }
             } catch (Exception e) {
-                logger.error("Failed to reset consumer group offsets for {}:{}: {}", groupId, topicName, e.getMessage());
+                logger.error("Failed to reset consumer group offsets for {}:{}", groupId, topicName, e);
                 throw new RuntimeException("Failed to reset offsets: " + e.getMessage(), e);
             }
         });
@@ -722,7 +719,7 @@ public class KafkaServiceImpl implements KafkaService {
                 result.all().get();
                 logger.info("Successfully deleted consumer group: {}", groupId);
             } catch (Exception e) {
-                logger.error("Failed to delete consumer group {}: {}", groupId, e.getMessage());
+                logger.error("Failed to delete consumer group {}", groupId, e);
                 throw new RuntimeException("Failed to delete consumer group: " + e.getMessage(), e);
             }
         });
@@ -756,7 +753,7 @@ public class KafkaServiceImpl implements KafkaService {
                 logger.info("Retrieved {} brokers from cluster", brokers.size());
                 return brokers;
             } catch (Exception e) {
-                logger.error("Failed to get brokers: {}", e.getMessage());
+                logger.error("Failed to get brokers", e);
                 return new ArrayList<>();
             }
         });
@@ -790,7 +787,7 @@ public class KafkaServiceImpl implements KafkaService {
                 logger.info("Retrieved {} cluster configuration properties", configs.size());
                 return configs;
             } catch (Exception e) {
-                logger.error("Failed to get cluster config: {}", e.getMessage());
+                logger.error("Failed to get cluster config", e);
                 return new ArrayList<>();
             }
         });
@@ -816,7 +813,7 @@ public class KafkaServiceImpl implements KafkaService {
                 result.all().get();
                 logger.info("Successfully updated cluster configuration");
             } catch (Exception e) {
-                logger.error("Failed to update cluster config: {}", e.getMessage());
+                logger.error("Failed to update cluster config", e);
                 throw new RuntimeException("Failed to update cluster config: " + e.getMessage(), e);
             }
         });
@@ -850,7 +847,7 @@ public class KafkaServiceImpl implements KafkaService {
                 logger.info("Retrieved {} configuration properties for broker {}", configs.size(), brokerId);
                 return configs;
             } catch (Exception e) {
-                logger.error("Failed to get broker config for {}: {}", brokerId, e.getMessage());
+                logger.error("Failed to get broker config for {}", brokerId, e);
                 return new ArrayList<>();
             }
         });
@@ -876,7 +873,7 @@ public class KafkaServiceImpl implements KafkaService {
                 result.all().get();
                 logger.info("Successfully updated configuration for broker {}", brokerId);
             } catch (Exception e) {
-                logger.error("Failed to update broker config for {}: {}", brokerId, e.getMessage());
+                logger.error("Failed to update broker config for {}", brokerId, e);
                 throw new RuntimeException("Failed to update broker config: " + e.getMessage(), e);
             }
         });

@@ -70,4 +70,36 @@ public class ConnectorInfo {
     
     public int getTasksRunning() { return tasksRunning.get(); }
     public void setTasksRunning(int tasksRunning) { this.tasksRunning.set(tasksRunning); }
+    
+    /**
+     * Returns a display-friendly string representation for UI dropdowns and lists.
+     * Format: "name (type)" - matches the UX pattern mentioned in the issue.
+     */
+    @Override
+    public String toString() {
+        String displayName = getName() != null ? getName() : "Unknown";
+        String displayType = getType() != null ? getType() : "Unknown";
+        return String.format("%s (%s)", displayName, displayType);
+    }
+    
+    /**
+     * Returns just the name for Map key lookups.
+     * Use this method when you need the original name for map.get() operations.
+     */
+    public String getMapKey() {
+        return getName();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ConnectorInfo that = (ConnectorInfo) obj;
+        return java.util.Objects.equals(getName(), that.getName());
+    }
+    
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(getName());
+    }
 }
