@@ -3,6 +3,7 @@ package com.kafkatool.ui;
 import com.kafkatool.model.AuthenticationConfig;
 import com.kafkatool.model.AuthenticationType;
 import com.kafkatool.model.ClusterInfo;
+import com.kafkatool.model.KafkaMessage;
 import com.kafkatool.model.TopicInfo;
 import com.kafkatool.util.KafkaAuthenticationUtil;
 import javafx.application.Platform;
@@ -10,6 +11,7 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.io.File;
@@ -295,12 +297,210 @@ public class DialogHelper {
     }
     
     /**
+     * Show enhanced message production dialog with schema support
+     */
+    public static Optional<MessageData> showEnhancedProduceMessageDialog(String topicName) {
+        Dialog<MessageData> dialog = new Dialog<>();
+        dialog.setTitle("Produce Message - Enhanced");
+        dialog.setHeaderText("Send message to topic: " + topicName);
+        
+        ButtonType sendButtonType = new ButtonType("Send", ButtonBar.ButtonData.OK_DONE);
+        ButtonType validateButtonType = new ButtonType("Validate", ButtonBar.ButtonData.OTHER);
+        dialog.getDialogPane().getButtonTypes().addAll(sendButtonType, validateButtonType, ButtonType.CANCEL);
+        
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setPrefWidth(700);
+        content.setPrefHeight(600);
+        
+        // Message format selection
+        HBox formatRow = new HBox(10);
+        ComboBox<MessageFormat> formatCombo = new ComboBox<>();
+        formatCombo.getItems().addAll(MessageFormat.values());
+        formatCombo.setValue(MessageFormat.STRING);
+        formatRow.getChildren().addAll(new Label("Message Format:"), formatCombo);
+        
+        // Schema selection (enabled for AVRO/PROTOBUF)
+        HBox schemaRow = new HBox(10);
+        ComboBox<String> schemaCombo = new ComboBox<>();
+        schemaCombo.setPromptText("Select schema (optional)");
+        schemaCombo.setDisable(true);
+        Button browseSchemaButton = new Button("Browse Schemas");
+        browseSchemaButton.setDisable(true);
+        schemaRow.getChildren().addAll(new Label("Schema:"), schemaCombo, browseSchemaButton);
+        
+        // Enable schema selection for AVRO/PROTOBUF
+        formatCombo.setOnAction(e -> {
+            MessageFormat format = formatCombo.getValue();
+            boolean needsSchema = format == MessageFormat.AVRO || format == MessageFormat.PROTOBUF;
+            schemaCombo.setDisable(!needsSchema);
+            browseSchemaButton.setDisable(!needsSchema);
+            
+            if (needsSchema) {
+                // Populate schema combo based on format
+                schemaCombo.getItems().clear();
+                if (format == MessageFormat.AVRO) {
+                    schemaCombo.getItems().addAll("user-value", "order-value", "event-value");
+                } else if (format == MessageFormat.PROTOBUF) {
+                    schemaCombo.getItems().addAll("UserMessage", "OrderMessage", "EventMessage");
+                }
+            }
+        });
+        
+        // Message fields
+        GridPane messageGrid = new GridPane();
+        messageGrid.setHgap(10);
+        messageGrid.setVgap(10);
+        
+        TextField keyField = new TextField();
+        keyField.setPromptText("Message Key (optional)");
+        TextArea valueArea = new TextArea();
+        valueArea.setPromptText("Message Value (JSON for AVRO/Protobuf)");
+        valueArea.setPrefRowCount(8);
+        valueArea.setWrapText(true);
+        
+        Spinner<Integer> partitionSpinner = new Spinner<>(-1, 100, -1);
+        partitionSpinner.getValueFactory().setValue(-1);
+        TextField headersField = new TextField();
+        headersField.setPromptText("key1=value1,key2=value2");
+        
+        messageGrid.add(new Label("Key:"), 0, 0);
+        messageGrid.add(keyField, 1, 0);
+        messageGrid.add(new Label("Value:"), 0, 1);
+        messageGrid.add(valueArea, 1, 1);
+        messageGrid.add(new Label("Partition:"), 0, 2);
+        messageGrid.add(partitionSpinner, 1, 2);
+        messageGrid.add(new Label("Headers:"), 0, 3);
+        messageGrid.add(headersField, 1, 3);
+        
+        // Schema preview area (collapsible)
+        TitledPane schemaPane = new TitledPane();
+        schemaPane.setText("Schema Preview");
+        schemaPane.setExpanded(false);
+        TextArea schemaPreviewArea = new TextArea();
+        schemaPreviewArea.setPromptText("Select a schema to view its definition");
+        schemaPreviewArea.setEditable(false);
+        schemaPreviewArea.setPrefRowCount(6);
+        schemaPane.setContent(schemaPreviewArea);
+        
+        // Validation feedback area
+        Label validationLabel = new Label();
+        validationLabel.getStyleClass().add("validation-feedback");
+        
+        content.getChildren().addAll(formatRow, schemaRow, messageGrid, schemaPane, validationLabel);
+        
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        dialog.getDialogPane().setContent(scrollPane);
+        
+        // Schema selection handler
+        schemaCombo.setOnAction(e -> {
+            String selectedSchema = schemaCombo.getValue();
+            if (selectedSchema != null) {
+                // Show sample schema (simplified)
+                String sampleSchema = generateSampleSchema(formatCombo.getValue(), selectedSchema);
+                schemaPreviewArea.setText(sampleSchema);
+                schemaPane.setExpanded(true);
+            }
+        });
+        
+        // Validation button handler
+        Button validateButton = (Button) dialog.getDialogPane().lookupButton(validateButtonType);
+        validateButton.setOnAction(e -> {
+            MessageFormat format = formatCombo.getValue();
+            String value = valueArea.getText();
+            String schema = schemaCombo.getValue();
+            
+            if (format == MessageFormat.JSON || format == MessageFormat.STRING) {
+                validationLabel.setText("✓ No validation needed for " + format);
+                validationLabel.setStyle("-fx-text-fill: green;");
+            } else if (format == MessageFormat.AVRO && schema != null) {
+                // Simplified validation
+                if (isValidJson(value)) {
+                    validationLabel.setText("✓ Message appears valid for Avro schema");
+                    validationLabel.setStyle("-fx-text-fill: green;");
+                } else {
+                    validationLabel.setText("✗ Invalid JSON format for Avro message");
+                    validationLabel.setStyle("-fx-text-fill: red;");
+                }
+            } else if (format == MessageFormat.PROTOBUF && schema != null) {
+                // Simplified validation
+                if (isValidJson(value)) {
+                    validationLabel.setText("✓ Message appears valid for Protobuf schema");
+                    validationLabel.setStyle("-fx-text-fill: green;");
+                } else {
+                    validationLabel.setText("✗ Invalid JSON format for Protobuf message");
+                    validationLabel.setStyle("-fx-text-fill: red;");
+                }
+            } else {
+                validationLabel.setText("⚠ Please select a schema for validation");
+                validationLabel.setStyle("-fx-text-fill: orange;");
+            }
+        });
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == sendButtonType) {
+                String key = keyField.getText().trim();
+                String value = valueArea.getText();
+                int partition = partitionSpinner.getValue();
+                MessageFormat format = formatCombo.getValue();
+                String schema = schemaCombo.getValue();
+                
+                Map<String, String> headers = new HashMap<>();
+                String headersText = headersField.getText().trim();
+                if (!headersText.isEmpty()) {
+                    for (String header : headersText.split(",")) {
+                        String[] parts = header.split("=", 2);
+                        if (parts.length == 2) {
+                            headers.put(parts[0].trim(), parts[1].trim());
+                        }
+                    }
+                }
+                
+                return new MessageData(key, value, headers, partition, format, schema);
+            }
+            return null;
+        });
+        
+        return dialog.showAndWait();
+    }
+    
+    private static String generateSampleSchema(MessageFormat format, String schemaName) {
+        if (format == MessageFormat.AVRO) {
+            return "{\n" +
+                   "  \"type\": \"record\",\n" +
+                   "  \"name\": \"" + schemaName + "\",\n" +
+                   "  \"fields\": [\n" +
+                   "    {\"name\": \"id\", \"type\": \"string\"},\n" +
+                   "    {\"name\": \"timestamp\", \"type\": \"long\"},\n" +
+                   "    {\"name\": \"data\", \"type\": \"string\"}\n" +
+                   "  ]\n" +
+                   "}";
+        } else if (format == MessageFormat.PROTOBUF) {
+            return "syntax = \"proto3\";\n\n" +
+                   "message " + schemaName + " {\n" +
+                   "  string id = 1;\n" +
+                   "  int64 timestamp = 2;\n" +
+                   "  string data = 3;\n" +
+                   "}";
+        }
+        return "No schema available";
+    }
+    
+    private static boolean isValidJson(String json) {
+        if (json == null || json.trim().isEmpty()) return false;
+        String trimmed = json.trim();
+        return (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+               (trimmed.startsWith("[") && trimmed.endsWith("]"));
+    }
+    
+    /**
      * Show search messages dialog
      */
     public static Optional<SearchCriteria> showSearchMessagesDialog() {
         Dialog<SearchCriteria> dialog = new Dialog<>();
         dialog.setTitle("Search Messages");
-        dialog.setHeaderText("Enter search criteria");
+        dialog.setHeaderText("Enter search criteria and preview options");
         
         ButtonType searchButtonType = new ButtonType("Search", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(searchButtonType, ButtonType.CANCEL);
@@ -314,15 +514,22 @@ public class DialogHelper {
         patternField.setPromptText("Search pattern");
         CheckBox searchKeyBox = new CheckBox("Search in key");
         CheckBox searchValueBox = new CheckBox("Search in value");
+        CheckBox searchHeadersBox = new CheckBox("Search in headers");
+        CheckBox enablePreviewBox = new CheckBox("Enable message preview");
         searchValueBox.setSelected(true);
+        enablePreviewBox.setSelected(true);
         Spinner<Integer> maxResultsSpinner = new Spinner<>(1, 10000, 100);
         
         grid.add(new Label("Pattern:"), 0, 0);
         grid.add(patternField, 1, 0);
+        grid.add(new Label("Search in:"), 0, 1);
         grid.add(searchKeyBox, 1, 1);
         grid.add(searchValueBox, 1, 2);
-        grid.add(new Label("Max Results:"), 0, 3);
-        grid.add(maxResultsSpinner, 1, 3);
+        grid.add(searchHeadersBox, 1, 3);
+        grid.add(new Label("Options:"), 0, 4);
+        grid.add(enablePreviewBox, 1, 4);
+        grid.add(new Label("Max Results:"), 0, 5);
+        grid.add(maxResultsSpinner, 1, 5);
         
         dialog.getDialogPane().setContent(grid);
         
@@ -333,13 +540,97 @@ public class DialogHelper {
                 String pattern = patternField.getText().trim();
                 if (!pattern.isEmpty()) {
                     return new SearchCriteria(pattern, searchKeyBox.isSelected(), 
-                        searchValueBox.isSelected(), maxResultsSpinner.getValue());
+                        searchValueBox.isSelected(), searchHeadersBox.isSelected(),
+                        maxResultsSpinner.getValue(), enablePreviewBox.isSelected());
                 }
             }
             return null;
         });
         
         return dialog.showAndWait();
+    }
+    
+    /**
+     * Show message preview dialog with expandable sections
+     */
+    public static void showMessagePreviewDialog(KafkaMessage message) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Message Preview");
+        dialog.setHeaderText("Topic: " + message.getTopic() + " | Partition: " + 
+                           message.getPartition() + " | Offset: " + message.getOffset());
+        
+        ButtonType closeButtonType = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().add(closeButtonType);
+        
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setPrefWidth(600);
+        content.setPrefHeight(500);
+        
+        // Message metadata
+        GridPane metadataGrid = new GridPane();
+        metadataGrid.setHgap(10);
+        metadataGrid.setVgap(5);
+        metadataGrid.add(new Label("Timestamp:"), 0, 0);
+        metadataGrid.add(new Label(message.getTimestamp() != null ? 
+            message.getTimestamp().toString() : "N/A"), 1, 0);
+        
+        // Key section (expandable)
+        TitledPane keyPane = new TitledPane();
+        keyPane.setText("Message Key" + (message.getKey() != null ? " (" + message.getKey().length() + " chars)" : " (null)"));
+        keyPane.setExpanded(false);
+        TextArea keyArea = new TextArea();
+        keyArea.setText(message.getKey() != null ? message.getKey() : "null");
+        keyArea.setEditable(false);
+        keyArea.setPrefRowCount(8);
+        keyArea.setWrapText(true);
+        keyPane.setContent(keyArea);
+        
+        // Value section (expandable)
+        TitledPane valuePane = new TitledPane();
+        valuePane.setText("Message Value" + (message.getValue() != null ? " (" + message.getValue().length() + " chars)" : " (null)"));
+        valuePane.setExpanded(true);
+        TextArea valueArea = new TextArea();
+        valueArea.setText(message.getValue() != null ? message.getValue() : "null");
+        valueArea.setEditable(false);
+        valueArea.setPrefRowCount(12);
+        valueArea.setWrapText(true);
+        valuePane.setContent(valueArea);
+        
+        // Headers section (expandable)
+        TitledPane headersPane = new TitledPane();
+        Map<String, String> headers = message.getHeaders();
+        int headerCount = headers != null ? headers.size() : 0;
+        headersPane.setText("Message Headers (" + headerCount + " headers)");
+        headersPane.setExpanded(false);
+        
+        if (headers != null && !headers.isEmpty()) {
+            VBox headersContent = new VBox(5);
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                HBox headerRow = new HBox(10);
+                Label keyLabel = new Label(entry.getKey() + ":");
+                keyLabel.getStyleClass().add("header-key");
+                Label valueLabel = new Label(entry.getValue());
+                valueLabel.getStyleClass().add("header-value");
+                headerRow.getChildren().addAll(keyLabel, valueLabel);
+                headersContent.getChildren().add(headerRow);
+            }
+            ScrollPane headersScroll = new ScrollPane(headersContent);
+            headersScroll.setPrefHeight(100);
+            headersScroll.setFitToWidth(true);
+            headersPane.setContent(headersScroll);
+        } else {
+            headersPane.setContent(new Label("No headers"));
+        }
+        
+        content.getChildren().addAll(metadataGrid, keyPane, valuePane, headersPane);
+        
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefHeight(500);
+        
+        dialog.getDialogPane().setContent(scrollPane);
+        dialog.showAndWait();
     }
     
     /**
@@ -411,37 +702,64 @@ public class DialogHelper {
         private final String value;
         private final Map<String, String> headers;
         private final int partition;
+        private final MessageFormat format;
+        private final String schemaName;
         
         public MessageData(String key, String value, Map<String, String> headers, int partition) {
+            this(key, value, headers, partition, MessageFormat.STRING, null);
+        }
+        
+        public MessageData(String key, String value, Map<String, String> headers, int partition, 
+                          MessageFormat format, String schemaName) {
             this.key = key;
             this.value = value;
             this.headers = headers;
             this.partition = partition;
+            this.format = format;
+            this.schemaName = schemaName;
         }
         
         public String getKey() { return key; }
         public String getValue() { return value; }
         public Map<String, String> getHeaders() { return headers; }
         public int getPartition() { return partition; }
+        public MessageFormat getFormat() { return format; }
+        public String getSchemaName() { return schemaName; }
+    }
+    
+    public enum MessageFormat {
+        STRING, JSON, AVRO, PROTOBUF
     }
     
     public static class SearchCriteria {
         private final String searchPattern;
         private final boolean searchInKey;
         private final boolean searchInValue;
+        private final boolean searchInHeaders;
         private final int maxResults;
+        private final boolean enablePreview;
         
-        public SearchCriteria(String searchPattern, boolean searchInKey, boolean searchInValue, int maxResults) {
+        public SearchCriteria(String searchPattern, boolean searchInKey, boolean searchInValue, 
+                            boolean searchInHeaders, int maxResults, boolean enablePreview) {
             this.searchPattern = searchPattern;
             this.searchInKey = searchInKey;
             this.searchInValue = searchInValue;
+            this.searchInHeaders = searchInHeaders;
             this.maxResults = maxResults;
+            this.enablePreview = enablePreview;
+        }
+        
+        // Backward compatibility constructor
+        public SearchCriteria(String searchPattern, boolean searchInKey, boolean searchInValue, int maxResults) {
+            this(searchPattern, searchInKey, searchInValue, false, maxResults, false);
         }
         
         public String getSearchPattern() { return searchPattern; }
         public boolean isSearchInKey() { return searchInKey; }
         public boolean isSearchInValue() { return searchInValue; }
+        public boolean isSearchInHeaders() { return searchInHeaders; }
         public int getMaxResults() { return maxResults; }
+        public boolean isEnablePreview() { return enablePreview; }
     }
     
     /**
