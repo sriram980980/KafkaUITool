@@ -3,6 +3,8 @@ package com.kafkatool.ui.controller;
 import com.kafkatool.model.*;
 import com.kafkatool.service.EnhancedKafkaService;
 import com.kafkatool.service.EnhancedKafkaServiceImpl;
+import com.kafkatool.service.SchemaRegistryService;
+import com.kafkatool.service.SchemaRegistryServiceImpl;
 import com.kafkatool.ui.DialogHelper;
 import com.kafkatool.util.JsonFormatter;
 import com.kafkatool.util.SettingsManager;
@@ -123,6 +125,8 @@ public class MainController implements Initializable {
     @FXML private TabPane messageDetailsTabPane;
     @FXML private TextArea rawMessageTextArea;
     @FXML private TextArea jsonMessageTextArea;
+    @FXML private TextArea avroMessageTextArea;
+    @FXML private TextArea protobufMessageTextArea;
     @FXML private TextArea headersTextArea;
     
     // FXML Controls - Status Bar
@@ -1662,6 +1666,8 @@ public class MainController implements Initializable {
         if (message == null) {
             rawMessageTextArea.clear();
             jsonMessageTextArea.clear();
+            avroMessageTextArea.clear();
+            protobufMessageTextArea.clear();
             headersTextArea.clear();
             return;
         }
@@ -1680,6 +1686,14 @@ public class MainController implements Initializable {
         // Update JSON formatted message (if value is JSON)
         String jsonContent = JsonFormatter.formatJson(message.getValue());
         jsonMessageTextArea.setText(jsonContent != null ? jsonContent : message.getValue());
+        
+        // Update Avro formatted message (attempt Avro deserialization)
+        String avroContent = attemptAvroDeserialization(message.getValue());
+        avroMessageTextArea.setText(avroContent);
+        
+        // Update ProtoBuff formatted message (attempt ProtoBuff deserialization)
+        String protobufContent = attemptProtobufDeserialization(message.getValue());
+        protobufMessageTextArea.setText(protobufContent);
         
         // Update headers
         headersTextArea.setText(message.getHeaders() != null ? message.getHeadersAsString() : "No headers");
@@ -1779,10 +1793,13 @@ public class MainController implements Initializable {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/" + fxmlPath));
             javafx.scene.Parent root = loader.load();
             
-            // Get the controller and inject the kafka service if it's a MetricsDashboardController
+            // Get the controller and inject services
             Object controller = loader.getController();
             if (controller instanceof com.kafkatool.ui.controller.enhanced.MetricsDashboardController) {
                 ((com.kafkatool.ui.controller.enhanced.MetricsDashboardController) controller).setKafkaService(kafkaService);
+            } else if (controller instanceof com.kafkatool.ui.controller.enhanced.SchemaRegistryController) {
+                SchemaRegistryService schemaRegistryService = new SchemaRegistryServiceImpl();
+                ((com.kafkatool.ui.controller.enhanced.SchemaRegistryController) controller).setSchemaRegistryService(schemaRegistryService);
             }
             
             javafx.stage.Stage stage = new javafx.stage.Stage();
@@ -3082,6 +3099,76 @@ public class MainController implements Initializable {
             chatMessagesArea.positionCaret(chatMessagesArea.getLength());
             
             updateStatus("Disconnected from chat");
+        }
+    }
+    
+    /**
+     * Attempt to deserialize message value as Avro format
+     */
+    private String attemptAvroDeserialization(String messageValue) {
+        if (messageValue == null || messageValue.trim().isEmpty()) {
+            return "No message content";
+        }
+        
+        try {
+            // Check if message might be Avro (usually binary, but we'll check if it's JSON-like first)
+            if (messageValue.trim().startsWith("{") && messageValue.trim().endsWith("}")) {
+                // If it's JSON, try to format it nicely for Avro display
+                String formattedJson = JsonFormatter.formatJson(messageValue);
+                if (formattedJson != null) {
+                    return "Avro-compatible JSON format:\n\n" + formattedJson;
+                }
+            }
+            
+            // For binary Avro data, we'd need the schema to properly deserialize
+            // For now, display information about the content
+            if (messageValue.length() > 100) {
+                return "Binary Avro data detected (length: " + messageValue.length() + " characters)\n\n" +
+                       "Note: Full Avro deserialization requires the schema.\n" +
+                       "First 100 characters:\n" + messageValue.substring(0, 100) + "...";
+            } else {
+                return "Possible Avro data:\n\n" + messageValue + 
+                       "\n\nNote: Full Avro deserialization requires the schema.";
+            }
+            
+        } catch (Exception e) {
+            return "Could not deserialize as Avro: " + e.getMessage() + 
+                   "\n\nRaw content:\n" + messageValue;
+        }
+    }
+    
+    /**
+     * Attempt to deserialize message value as ProtoBuff format
+     */
+    private String attemptProtobufDeserialization(String messageValue) {
+        if (messageValue == null || messageValue.trim().isEmpty()) {
+            return "No message content";
+        }
+        
+        try {
+            // Check if message might be ProtoBuff JSON format
+            if (messageValue.trim().startsWith("{") && messageValue.trim().endsWith("}")) {
+                // If it's JSON, try to format it nicely for ProtoBuff display
+                String formattedJson = JsonFormatter.formatJson(messageValue);
+                if (formattedJson != null) {
+                    return "ProtoBuff-compatible JSON format:\n\n" + formattedJson;
+                }
+            }
+            
+            // For binary ProtoBuff data, we'd need the .proto definition to properly deserialize
+            // For now, display information about the content
+            if (messageValue.length() > 100) {
+                return "Binary ProtoBuff data detected (length: " + messageValue.length() + " characters)\n\n" +
+                       "Note: Full ProtoBuff deserialization requires the .proto definition.\n" +
+                       "First 100 characters:\n" + messageValue.substring(0, 100) + "...";
+            } else {
+                return "Possible ProtoBuff data:\n\n" + messageValue + 
+                       "\n\nNote: Full ProtoBuff deserialization requires the .proto definition.";
+            }
+            
+        } catch (Exception e) {
+            return "Could not deserialize as ProtoBuff: " + e.getMessage() + 
+                   "\n\nRaw content:\n" + messageValue;
         }
     }
     

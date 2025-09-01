@@ -165,6 +165,7 @@
                         <Button fx:id="loadMessagesButton" mnemonicParsing="false" onAction="#onLoadMessages" text="Load" styleClass="primary-button" />
                         <Button fx:id="loadLatestButton" mnemonicParsing="false" onAction="#onLoadLatest" text="Load Latest" styleClass="action-button" />
                         <Button fx:id="searchMessagesButton" mnemonicParsing="false" onAction="#onSearchMessages" text="🔍" styleClass="icon-button"  />
+                        <Button fx:id="quickProduceButton" mnemonicParsing="false" onAction="#onProduceMessage" text="+" styleClass="icon-button" />
                      </children>
                      <padding>
                         <Insets bottom="5" left="5" right="5" top="5" />
@@ -205,6 +206,16 @@
                                     <Tab text="JSON">
                                        <content>
                                           <TextArea fx:id="jsonMessageTextArea" editable="false" wrapText="true" styleClass="message-content" />
+                                       </content>
+                                    </Tab>
+                                    <Tab text="Avro">
+                                       <content>
+                                          <TextArea fx:id="avroMessageTextArea" editable="false" wrapText="true" styleClass="message-content" />
+                                       </content>
+                                    </Tab>
+                                    <Tab text="ProtoBuff">
+                                       <content>
+                                          <TextArea fx:id="protobufMessageTextArea" editable="false" wrapText="true" styleClass="message-content" />
                                        </content>
                                     </Tab>
                                     <Tab text="Headers">
