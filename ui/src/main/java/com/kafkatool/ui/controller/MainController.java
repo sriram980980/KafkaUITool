@@ -8,6 +8,7 @@ import com.kafkatool.util.JsonFormatter;
 import com.kafkatool.util.SettingsManager;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -1038,9 +1039,11 @@ public class MainController implements Initializable {
     @FXML
     private void onProduceMessage() {
         if (currentTopic != null && currentCluster != null) {
-            DialogHelper.showProduceMessageDialog(currentTopic.getName()).ifPresent(messageData -> {
+            // Use enhanced dialog for better schema support
+            DialogHelper.showEnhancedProduceMessageDialog(currentTopic.getName()).ifPresent(messageData -> {
                 showLoading(true);
-                updateStatus("Producing message");
+                updateStatus("Producing message to " + currentTopic.getName() + 
+                           " (Format: " + messageData.getFormat() + ")");
                 
                 kafkaService.produceMessageAsync(
                     currentCluster.getBrokerUrls(),
@@ -1053,7 +1056,7 @@ public class MainController implements Initializable {
                     Platform.runLater(() -> {
                         showLoading(false);
                         if (throwable == null) {
-                            updateStatus("Message produced successfully");
+                            updateStatus("Message produced successfully using " + messageData.getFormat() + " format");
                             // Optionally refresh messages
                             if (partitionComboBox.getValue() != null && 
                                 partitionComboBox.getValue() == messageData.getPartition()) {
@@ -1067,13 +1070,15 @@ public class MainController implements Initializable {
                     });
                 });
             });
+        } else {
+            DialogHelper.showErrorDialog("No Topic Selected", "Selection Required", "Please select a topic first.");
         }
     }
     
     @FXML
     private void onSearchMessages() {
         if (currentTopic != null && currentCluster != null) {
-            showRegexSearchDialog();
+            showEnhancedSearchDialog();
         } else {
             DialogHelper.showErrorDialog("No Topic Selected", "Selection Required", "Please select a topic first.");
         }
@@ -2176,6 +2181,150 @@ public class MainController implements Initializable {
         
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().setPrefSize(600, 500);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.show();
+    }
+    
+    private void showEnhancedSearchDialog() {
+        DialogHelper.showSearchMessagesDialog().ifPresent(criteria -> {
+            showLoading(true);
+            updateStatus("Searching messages in " + currentTopic.getName());
+            
+            // Get selected partition or search all if none selected
+            Integer selectedPartition = partitionComboBox.getValue();
+            List<CompletableFuture<List<KafkaMessage>>> searchTasks = new ArrayList<>();
+            
+            if (selectedPartition != null) {
+                // Search in selected partition only
+                CompletableFuture<List<KafkaMessage>> searchTask = kafkaService.searchMessagesAsync(
+                    currentCluster.getBrokerUrls(),
+                    currentTopic.getName(),
+                    selectedPartition,
+                    criteria.getSearchPattern(),
+                    criteria.isSearchInKey(),
+                    criteria.isSearchInValue(),
+                    criteria.isSearchInHeaders(),
+                    criteria.getMaxResults()
+                );
+                searchTasks.add(searchTask);
+            } else {
+                // Search in all partitions
+                for (int i = 0; i < currentTopic.getPartitions(); i++) {
+                    final int partition = i;
+                    CompletableFuture<List<KafkaMessage>> searchTask = kafkaService.searchMessagesAsync(
+                        currentCluster.getBrokerUrls(),
+                        currentTopic.getName(),
+                        partition,
+                        criteria.getSearchPattern(),
+                        criteria.isSearchInKey(),
+                        criteria.isSearchInValue(),
+                        criteria.isSearchInHeaders(),
+                        Math.min(criteria.getMaxResults() / currentTopic.getPartitions(), 100)
+                    );
+                    searchTasks.add(searchTask);
+                }
+            }
+            
+            // Combine all search results
+            CompletableFuture.allOf(searchTasks.toArray(new CompletableFuture[0]))
+                .thenApply(v -> {
+                    List<KafkaMessage> allResults = new ArrayList<>();
+                    for (CompletableFuture<List<KafkaMessage>> task : searchTasks) {
+                        try {
+                            allResults.addAll(task.get());
+                        } catch (Exception e) {
+                            logger.warn("Failed to get search results from one partition: {}", e.getMessage());
+                        }
+                    }
+                    return allResults.stream()
+                        .limit(criteria.getMaxResults())
+                        .collect(Collectors.toList());
+                })
+                .whenComplete((results, throwable) -> {
+                    Platform.runLater(() -> {
+                        showLoading(false);
+                        if (throwable == null) {
+                            updateStatus("Search completed: " + results.size() + " messages found");
+                            showSearchResults(results, criteria);
+                        } else {
+                            updateStatus("Search failed: " + throwable.getMessage());
+                            DialogHelper.showErrorDialog("Search Error", 
+                                "Failed to search messages", throwable.getMessage());
+                        }
+                    });
+                });
+        });
+    }
+    
+    private void showSearchResults(List<KafkaMessage> results, DialogHelper.SearchCriteria criteria) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Search Results - " + currentTopic.getName());
+        dialog.setHeaderText("Found " + results.size() + " messages matching pattern: " + criteria.getSearchPattern());
+        
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setPrefWidth(800);
+        content.setPrefHeight(600);
+        
+        // Results table
+        TableView<KafkaMessage> table = new TableView<>();
+        table.setItems(FXCollections.observableArrayList(results));
+        
+        TableColumn<KafkaMessage, Integer> partitionCol = new TableColumn<>("Partition");
+        partitionCol.setCellValueFactory(new PropertyValueFactory<>("partition"));
+        partitionCol.setPrefWidth(80);
+        
+        TableColumn<KafkaMessage, Long> offsetCol = new TableColumn<>("Offset");
+        offsetCol.setCellValueFactory(new PropertyValueFactory<>("offset"));
+        offsetCol.setPrefWidth(100);
+        
+        TableColumn<KafkaMessage, String> keyCol = new TableColumn<>("Key");
+        keyCol.setCellValueFactory(new PropertyValueFactory<>("key"));
+        keyCol.setPrefWidth(150);
+        
+        TableColumn<KafkaMessage, String> valueCol = new TableColumn<>("Value Preview");
+        valueCol.setCellValueFactory(cellData -> {
+            String value = cellData.getValue().getValue();
+            String preview = value != null && value.length() > 50 ? 
+                value.substring(0, 50) + "..." : value;
+            return new SimpleStringProperty(preview);
+        });
+        valueCol.setPrefWidth(300);
+        
+        TableColumn<KafkaMessage, String> timestampCol = new TableColumn<>("Timestamp");
+        timestampCol.setCellValueFactory(cellData -> {
+            LocalDateTime timestamp = cellData.getValue().getTimestamp();
+            return new SimpleStringProperty(timestamp != null ? timestamp.format(TIMESTAMP_FORMATTER) : "N/A");
+        });
+        timestampCol.setPrefWidth(150);
+        
+        table.getColumns().addAll(partitionCol, offsetCol, keyCol, valueCol, timestampCol);
+        table.setPrefHeight(400);
+        
+        // Preview button (enabled if preview option was selected)
+        Button previewButton = new Button("Preview Message");
+        previewButton.setDisable(true);
+        previewButton.setStyle("-fx-background-color: #4a90e2; -fx-text-fill: white;");
+        
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            previewButton.setDisable(newSelection == null);
+        });
+        
+        previewButton.setOnAction(e -> {
+            KafkaMessage selectedMessage = table.getSelectionModel().getSelectedItem();
+            if (selectedMessage != null) {
+                DialogHelper.showMessagePreviewDialog(selectedMessage);
+            }
+        });
+        
+        HBox buttonRow = new HBox(10);
+        if (criteria.isEnablePreview()) {
+            buttonRow.getChildren().add(previewButton);
+        }
+        
+        content.getChildren().addAll(table, buttonRow);
+        
+        dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.show();
     }
