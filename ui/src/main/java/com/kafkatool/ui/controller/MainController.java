@@ -3,6 +3,8 @@ package com.kafkatool.ui.controller;
 import com.kafkatool.model.*;
 import com.kafkatool.service.EnhancedKafkaService;
 import com.kafkatool.service.EnhancedKafkaServiceImpl;
+import com.kafkatool.service.SchemaRegistryService;
+import com.kafkatool.service.SchemaRegistryServiceImpl;
 import com.kafkatool.ui.DialogHelper;
 import com.kafkatool.util.JsonFormatter;
 import com.kafkatool.util.SettingsManager;
@@ -1791,10 +1793,13 @@ public class MainController implements Initializable {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/" + fxmlPath));
             javafx.scene.Parent root = loader.load();
             
-            // Get the controller and inject the kafka service if it's a MetricsDashboardController
+            // Get the controller and inject services
             Object controller = loader.getController();
             if (controller instanceof com.kafkatool.ui.controller.enhanced.MetricsDashboardController) {
                 ((com.kafkatool.ui.controller.enhanced.MetricsDashboardController) controller).setKafkaService(kafkaService);
+            } else if (controller instanceof com.kafkatool.ui.controller.enhanced.SchemaRegistryController) {
+                SchemaRegistryService schemaRegistryService = new SchemaRegistryServiceImpl();
+                ((com.kafkatool.ui.controller.enhanced.SchemaRegistryController) controller).setSchemaRegistryService(schemaRegistryService);
             }
             
             javafx.stage.Stage stage = new javafx.stage.Stage();
