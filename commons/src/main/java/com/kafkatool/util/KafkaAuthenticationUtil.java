@@ -31,6 +31,13 @@ public class KafkaAuthenticationUtil {
             return;
         }
         
+        // Decrypt credentials before use if security util is available
+        try {
+            authConfig = AuthenticationSecurityUtil.decryptCredentials(authConfig);
+        } catch (Exception e) {
+            logger.debug("Security util not available, using credentials as-is: {}", e.getMessage());
+        }
+        
         switch (authType) {
             case SASL_PLAIN:
                 configureSaslPlain(props, authConfig);
