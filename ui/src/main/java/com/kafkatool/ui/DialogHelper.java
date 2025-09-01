@@ -6,6 +6,7 @@ import com.kafkatool.model.ClusterInfo;
 import com.kafkatool.model.KafkaMessage;
 import com.kafkatool.model.TopicInfo;
 import com.kafkatool.util.KafkaAuthenticationUtil;
+import com.kafkatool.util.JsonFormatter;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -373,15 +374,41 @@ public class DialogHelper {
         messageGrid.add(new Label("Headers:"), 0, 3);
         messageGrid.add(headersField, 1, 3);
         
-        // Schema preview area (collapsible)
+        // Schema preview area (collapsible) - Enhanced with editing capabilities
         TitledPane schemaPane = new TitledPane();
-        schemaPane.setText("Schema Preview");
+        schemaPane.setText("Schema Editor");
         schemaPane.setExpanded(false);
+        
+        VBox schemaContainer = new VBox(5);
+        
+        // Schema editing area with enhanced features
         TextArea schemaPreviewArea = new TextArea();
-        schemaPreviewArea.setPromptText("Select a schema to view its definition");
-        schemaPreviewArea.setEditable(false);
-        schemaPreviewArea.setPrefRowCount(6);
-        schemaPane.setContent(schemaPreviewArea);
+        schemaPreviewArea.setPromptText("Select a schema to view its definition, or create a custom schema");
+        schemaPreviewArea.setEditable(true); // Made editable for enhanced UX
+        schemaPreviewArea.setPrefRowCount(8);
+        schemaPreviewArea.setWrapText(true);
+        schemaPreviewArea.getStyleClass().add("schema-editor");
+        
+        // Schema actions toolbar
+        HBox schemaActions = new HBox(5);
+        Button formatSchemaButton = new Button("Format");
+        Button validateSchemaButton = new Button("Validate");
+        Button resetSchemaButton = new Button("Reset");
+        Button loadSchemaButton = new Button("Load File");
+        
+        formatSchemaButton.getStyleClass().add("action-button");
+        validateSchemaButton.getStyleClass().add("action-button");
+        resetSchemaButton.getStyleClass().add("action-button");
+        loadSchemaButton.getStyleClass().add("action-button");
+        
+        schemaActions.getChildren().addAll(formatSchemaButton, validateSchemaButton, resetSchemaButton, loadSchemaButton);
+        
+        // Schema validation feedback
+        Label schemaValidationLabel = new Label();
+        schemaValidationLabel.getStyleClass().add("validation-feedback");
+        
+        schemaContainer.getChildren().addAll(schemaPreviewArea, schemaActions, schemaValidationLabel);
+        schemaPane.setContent(schemaContainer);
         
         // Validation feedback area
         Label validationLabel = new Label();
@@ -435,6 +462,72 @@ public class DialogHelper {
             } else {
                 validationLabel.setText("⚠ Please select a schema for validation");
                 validationLabel.setStyle("-fx-text-fill: orange;");
+            }
+        });
+        
+        // Enhanced schema editor button handlers
+        formatSchemaButton.setOnAction(e -> {
+            String currentSchema = schemaPreviewArea.getText();
+            if (currentSchema != null && !currentSchema.trim().isEmpty()) {
+                MessageFormat format = formatCombo.getValue();
+                String formattedSchema = formatSchema(currentSchema, format);
+                schemaPreviewArea.setText(formattedSchema);
+                schemaValidationLabel.setText("✓ Schema formatted");
+                schemaValidationLabel.setStyle("-fx-text-fill: green;");
+            }
+        });
+        
+        validateSchemaButton.setOnAction(e -> {
+            String currentSchema = schemaPreviewArea.getText();
+            MessageFormat format = formatCombo.getValue();
+            if (currentSchema != null && !currentSchema.trim().isEmpty()) {
+                String validationResult = validateSchema(currentSchema, format);
+                schemaValidationLabel.setText(validationResult);
+                if (validationResult.startsWith("✓")) {
+                    schemaValidationLabel.setStyle("-fx-text-fill: green;");
+                } else {
+                    schemaValidationLabel.setStyle("-fx-text-fill: red;");
+                }
+            } else {
+                schemaValidationLabel.setText("⚠ No schema to validate");
+                schemaValidationLabel.setStyle("-fx-text-fill: orange;");
+            }
+        });
+        
+        resetSchemaButton.setOnAction(e -> {
+            MessageFormat format = formatCombo.getValue();
+            String schema = schemaCombo.getValue();
+            if (format != null && schema != null) {
+                String sampleSchema = generateSampleSchema(format, schema);
+                schemaPreviewArea.setText(sampleSchema);
+                schemaValidationLabel.setText("Schema reset to default");
+                schemaValidationLabel.setStyle("-fx-text-fill: blue;");
+            }
+        });
+        
+        loadSchemaButton.setOnAction(e -> {
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Load Schema File");
+            MessageFormat format = formatCombo.getValue();
+            if (format == MessageFormat.AVRO) {
+                fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Avro Schema", "*.avsc", "*.json"));
+            } else if (format == MessageFormat.PROTOBUF) {
+                fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Protobuf Schema", "*.proto"));
+            }
+            fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("All Files", "*.*"));
+            
+            java.io.File selectedFile = fileChooser.showOpenDialog(dialog.getOwner());
+            if (selectedFile != null) {
+                try {
+                    String schemaContent = java.nio.file.Files.readString(selectedFile.toPath());
+                    schemaPreviewArea.setText(schemaContent);
+                    schemaValidationLabel.setText("✓ Schema loaded from file: " + selectedFile.getName());
+                    schemaValidationLabel.setStyle("-fx-text-fill: green;");
+                    schemaPane.setExpanded(true);
+                } catch (Exception ex) {
+                    schemaValidationLabel.setText("✗ Failed to load file: " + ex.getMessage());
+                    schemaValidationLabel.setStyle("-fx-text-fill: red;");
+                }
             }
         });
         
@@ -933,6 +1026,98 @@ public class DialogHelper {
             if (!additionalProps.isEmpty()) config.setAdditionalProperties(additionalProps);
             
             return config;
+        }
+    }
+    
+    /**
+     * Format schema content based on its type
+     */
+    private static String formatSchema(String schema, MessageFormat format) {
+        if (schema == null || schema.trim().isEmpty()) {
+            return schema;
+        }
+        
+        try {
+            if (format == MessageFormat.AVRO) {
+                // Try to format as JSON for Avro schemas
+                String formattedJson = JsonFormatter.formatJson(schema);
+                return formattedJson != null ? formattedJson : schema;
+            } else if (format == MessageFormat.PROTOBUF) {
+                // Basic formatting for proto files - add proper indentation
+                return formatProtoSchema(schema);
+            }
+            return schema;
+        } catch (Exception e) {
+            return schema; // Return original if formatting fails
+        }
+    }
+    
+    /**
+     * Basic protobuf schema formatting
+     */
+    private static String formatProtoSchema(String protoSchema) {
+        StringBuilder formatted = new StringBuilder();
+        String[] lines = protoSchema.split("\n");
+        int indentLevel = 0;
+        
+        for (String line : lines) {
+            String trimmed = line.trim();
+            
+            // Decrease indent for closing braces
+            if (trimmed.equals("}")) {
+                indentLevel--;
+            }
+            
+            // Add indentation
+            formatted.append("  ".repeat(Math.max(0, indentLevel)));
+            formatted.append(trimmed);
+            formatted.append("\n");
+            
+            // Increase indent for opening braces
+            if (trimmed.endsWith("{")) {
+                indentLevel++;
+            }
+        }
+        
+        return formatted.toString();
+    }
+    
+    /**
+     * Validate schema content based on its type
+     */
+    private static String validateSchema(String schema, MessageFormat format) {
+        if (schema == null || schema.trim().isEmpty()) {
+            return "✗ Schema is empty";
+        }
+        
+        try {
+            if (format == MessageFormat.AVRO) {
+                // Basic JSON validation for Avro schemas
+                if (isValidJson(schema)) {
+                    // Additional Avro-specific checks
+                    if (schema.contains("\"type\"") && (schema.contains("\"record\"") || 
+                        schema.contains("\"string\"") || schema.contains("\"int\"") || 
+                        schema.contains("\"long\"") || schema.contains("\"double\"") || 
+                        schema.contains("\"boolean\"") || schema.contains("\"array\"") || 
+                        schema.contains("\"map\""))) {
+                        return "✓ Valid Avro schema structure";
+                    } else {
+                        return "⚠ Valid JSON but may not be a complete Avro schema";
+                    }
+                } else {
+                    return "✗ Invalid JSON format for Avro schema";
+                }
+            } else if (format == MessageFormat.PROTOBUF) {
+                // Basic protobuf validation
+                if (schema.contains("syntax") && schema.contains("message") && schema.contains("{")) {
+                    return "✓ Valid ProtoBuff schema structure";
+                } else {
+                    return "⚠ Schema may be incomplete - ensure it has syntax, message definitions";
+                }
+            }
+            return "✓ Schema format appears valid";
+        } catch (Exception e) {
+            return "✗ Schema validation error: " + e.getMessage();
         }
     }
 }
