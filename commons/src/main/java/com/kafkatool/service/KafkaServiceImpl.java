@@ -464,6 +464,7 @@ public class KafkaServiceImpl implements KafkaService {
                                                                     String searchPattern,
                                                                     boolean searchInKey,
                                                                     boolean searchInValue,
+                                                                    boolean searchInHeaders,
                                                                     int maxResults) {
         return CompletableFuture.supplyAsync(() -> {
             Properties props = new Properties();
@@ -498,6 +499,20 @@ public class KafkaServiceImpl implements KafkaService {
                             if (searchInValue && record.value() != null && 
                                 record.value().toLowerCase().contains(searchPattern.toLowerCase())) {
                                 matches = true;
+                            }
+                            
+                            if (searchInHeaders && record.headers() != null) {
+                                for (var header : record.headers()) {
+                                    String headerKey = header.key();
+                                    String headerValue = header.value() != null ? 
+                                        new String(header.value()) : "";
+                                    
+                                    if ((headerKey.toLowerCase().contains(searchPattern.toLowerCase()) ||
+                                         headerValue.toLowerCase().contains(searchPattern.toLowerCase()))) {
+                                        matches = true;
+                                        break;
+                                    }
+                                }
                             }
                             
                             if (matches) {

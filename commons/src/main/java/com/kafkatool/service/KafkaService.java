@@ -111,7 +111,20 @@ public interface KafkaService {
                                                              String searchPattern,
                                                              boolean searchInKey,
                                                              boolean searchInValue,
+                                                             boolean searchInHeaders,
                                                              int maxResults);
+                                                             
+    // Backward compatibility method
+    default CompletableFuture<List<KafkaMessage>> searchMessagesAsync(String brokerUrls,
+                                                                     String topicName,
+                                                                     int partition,
+                                                                     String searchPattern,
+                                                                     boolean searchInKey,
+                                                                     boolean searchInValue,
+                                                                     int maxResults) {
+        return searchMessagesAsync(brokerUrls, topicName, partition, searchPattern,
+                                 searchInKey, searchInValue, false, maxResults);
+    }
     
     // ===== CONSUMER GROUP MANAGEMENT =====
     
