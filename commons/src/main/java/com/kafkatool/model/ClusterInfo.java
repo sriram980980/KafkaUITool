@@ -12,6 +12,10 @@ public class ClusterInfo {
     private boolean connectByDefault = false;
     private String kafkaVersion = "";
     
+    // Authentication fields
+    private AuthenticationType authenticationType = AuthenticationType.NONE;
+    private AuthenticationConfig authenticationConfig;
+    
     public ClusterInfo() {}
     
     public ClusterInfo(String name, String brokerUrls) {
@@ -21,6 +25,19 @@ public class ClusterInfo {
     
     public ClusterInfo(String name, String brokerUrls, boolean connectByDefault) {
         this(name, brokerUrls);
+        this.connectByDefault = connectByDefault;
+    }
+    
+    public ClusterInfo(String name, String brokerUrls, AuthenticationType authenticationType, 
+                      AuthenticationConfig authenticationConfig) {
+        this(name, brokerUrls);
+        this.authenticationType = authenticationType != null ? authenticationType : AuthenticationType.NONE;
+        this.authenticationConfig = authenticationConfig;
+    }
+    
+    public ClusterInfo(String name, String brokerUrls, boolean connectByDefault,
+                      AuthenticationType authenticationType, AuthenticationConfig authenticationConfig) {
+        this(name, brokerUrls, authenticationType, authenticationConfig);
         this.connectByDefault = connectByDefault;
     }
     
@@ -63,6 +80,43 @@ public class ClusterInfo {
     
     public void setKafkaVersion(String kafkaVersion) {
         this.kafkaVersion = kafkaVersion;
+    }
+    
+    public AuthenticationType getAuthenticationType() {
+        return authenticationType != null ? authenticationType : AuthenticationType.NONE;
+    }
+    
+    public void setAuthenticationType(AuthenticationType authenticationType) {
+        this.authenticationType = authenticationType != null ? authenticationType : AuthenticationType.NONE;
+    }
+    
+    public AuthenticationConfig getAuthenticationConfig() {
+        return authenticationConfig;
+    }
+    
+    public void setAuthenticationConfig(AuthenticationConfig authenticationConfig) {
+        this.authenticationConfig = authenticationConfig;
+    }
+    
+    /**
+     * Check if this cluster requires authentication
+     */
+    public boolean requiresAuthentication() {
+        return authenticationType != null && authenticationType != AuthenticationType.NONE;
+    }
+    
+    /**
+     * Get a copy of this cluster info with masked authentication data for display
+     */
+    public ClusterInfo createMaskedCopy() {
+        ClusterInfo masked = new ClusterInfo(this.name, this.brokerUrls, this.connectByDefault);
+        masked.status = this.status;
+        masked.kafkaVersion = this.kafkaVersion;
+        masked.authenticationType = this.authenticationType;
+        if (this.authenticationConfig != null) {
+            masked.authenticationConfig = this.authenticationConfig.createMaskedCopy();
+        }
+        return masked;
     }
     
     @Override

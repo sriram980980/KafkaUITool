@@ -17,14 +17,29 @@ public interface KafkaService {
     CompletableFuture<Boolean> testConnectionAsync(String brokerUrls);
     
     /**
+     * Test connection to a Kafka cluster with authentication
+     */
+    CompletableFuture<Boolean> testConnectionAsync(ClusterInfo clusterInfo);
+    
+    /**
      * Get Kafka version information
      */
     CompletableFuture<String> getKafkaVersionAsync(String brokerUrls);
     
     /**
+     * Get Kafka version information with authentication
+     */
+    CompletableFuture<String> getKafkaVersionAsync(ClusterInfo clusterInfo);
+    
+    /**
      * Get list of topics in the cluster
      */
     CompletableFuture<List<TopicInfo>> getTopicsAsync(String brokerUrls);
+    
+    /**
+     * Get list of topics in the cluster with authentication
+     */
+    CompletableFuture<List<TopicInfo>> getTopicsAsync(ClusterInfo clusterInfo);
     
     /**
      * Create a new topic

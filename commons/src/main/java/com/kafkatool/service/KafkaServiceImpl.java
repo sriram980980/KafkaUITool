@@ -1,6 +1,7 @@
 package com.kafkatool.service;
 
 import com.kafkatool.model.*;
+import com.kafkatool.util.KafkaAuthenticationUtil;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -60,6 +61,27 @@ public class KafkaServiceImpl implements KafkaService {
     }
     
     @Override
+    public CompletableFuture<Boolean> testConnectionAsync(ClusterInfo clusterInfo) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = createBaseProperties(clusterInfo);
+            props.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "5000");
+            props.put(AdminClientConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG, "10000");
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                DescribeClusterResult result = adminClient.describeCluster();
+                result.clusterId().get();
+                logger.info("Successfully connected to Kafka cluster {} with authentication type {}", 
+                    clusterInfo.getName(), clusterInfo.getAuthenticationType());
+                return true;
+            } catch (Exception e) {
+                logger.error("Failed to connect to Kafka cluster {} with authentication type {}: {}", 
+                    clusterInfo.getName(), clusterInfo.getAuthenticationType(), e.getMessage());
+                return false;
+            }
+        });
+    }
+    
+    @Override
     public CompletableFuture<String> getKafkaVersionAsync(String brokerUrls) {
         return CompletableFuture.supplyAsync(() -> {
             Properties props = new Properties();
@@ -71,6 +93,22 @@ public class KafkaServiceImpl implements KafkaService {
                 return "Cluster ID: " + clusterId;
             } catch (Exception e) {
                 logger.error("Failed to get Kafka version: {}", e.getMessage());
+                return "Unknown";
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<String> getKafkaVersionAsync(ClusterInfo clusterInfo) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = createBaseProperties(clusterInfo);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                DescribeClusterResult result = adminClient.describeCluster();
+                String clusterId = result.clusterId().get();
+                return "Cluster ID: " + clusterId;
+            } catch (Exception e) {
+                logger.error("Failed to get Kafka version for cluster {}: {}", clusterInfo.getName(), e.getMessage());
                 return "Unknown";
             }
         });
@@ -106,6 +144,40 @@ public class KafkaServiceImpl implements KafkaService {
                 return topics;
             } catch (Exception e) {
                 logger.error("Failed to get topics: {}", e.getMessage());
+                return new ArrayList<>();
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<List<TopicInfo>> getTopicsAsync(ClusterInfo clusterInfo) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = createBaseProperties(clusterInfo);
+            
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                ListTopicsResult topicsResult = adminClient.listTopics();
+                Set<String> topicNames = topicsResult.names().get();
+                
+                List<TopicInfo> topics = new ArrayList<>();
+                for (String topicName : topicNames) {
+                    if (!topicName.startsWith("__")) { // Skip internal topics
+                        DescribeTopicsResult describeResult = adminClient.describeTopics(Collections.singleton(topicName));
+                        TopicDescription description = describeResult.all().get().get(topicName);
+                        
+                        TopicInfo topicInfo = new TopicInfo();
+                        topicInfo.setName(topicName);
+                        topicInfo.setPartitions(description.partitions().size());
+                        if (!description.partitions().isEmpty()) {
+                        topicInfo.setReplicationFactor((short) description.partitions().get(0).replicas().size());
+                        }
+                        topics.add(topicInfo);
+                    }
+                }
+                
+                logger.info("Retrieved {} topics from cluster {}", topics.size(), clusterInfo.getName());
+                return topics;
+            } catch (Exception e) {
+                logger.error("Failed to get topics from cluster {}: {}", clusterInfo.getName(), e.getMessage());
                 return new ArrayList<>();
             }
         });
@@ -880,5 +952,51 @@ public class KafkaServiceImpl implements KafkaService {
                 throw new RuntimeException("Failed to update broker config: " + e.getMessage(), e);
             }
         });
+    }
+    
+    // ===== HELPER METHODS FOR AUTHENTICATION =====
+    
+    /**
+     * Create base properties with authentication configuration for AdminClient
+     */
+    private Properties createBaseProperties(ClusterInfo clusterInfo) {
+        Properties props = new Properties();
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, clusterInfo.getBrokerUrls());
+        
+        // Configure authentication if required
+        KafkaAuthenticationUtil.configureAuthentication(props, clusterInfo);
+        
+        return props;
+    }
+    
+    /**
+     * Create base properties with authentication configuration for Consumer
+     */
+    private Properties createConsumerProperties(ClusterInfo clusterInfo, String groupId) {
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, clusterInfo.getBrokerUrls());
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        
+        // Configure authentication if required
+        KafkaAuthenticationUtil.configureAuthentication(props, clusterInfo);
+        
+        return props;
+    }
+    
+    /**
+     * Create base properties with authentication configuration for Producer
+     */
+    private Properties createProducerProperties(ClusterInfo clusterInfo) {
+        Properties props = new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, clusterInfo.getBrokerUrls());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        
+        // Configure authentication if required
+        KafkaAuthenticationUtil.configureAuthentication(props, clusterInfo);
+        
+        return props;
     }
 }
