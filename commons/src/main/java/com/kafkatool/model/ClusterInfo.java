@@ -16,6 +16,12 @@ public class ClusterInfo {
     private AuthenticationType authenticationType = AuthenticationType.NONE;
     private AuthenticationConfig authenticationConfig;
     
+    // Schema Registry fields
+    private boolean schemaRegistryEnabled = false;
+    private String schemaRegistryUrl;
+    private AuthenticationType schemaRegistryAuthType = AuthenticationType.NONE;
+    private AuthenticationConfig schemaRegistryAuthConfig;
+    
     public ClusterInfo() {}
     
     public ClusterInfo(String name, String brokerUrls) {
@@ -39,6 +45,20 @@ public class ClusterInfo {
                       AuthenticationType authenticationType, AuthenticationConfig authenticationConfig) {
         this(name, brokerUrls, authenticationType, authenticationConfig);
         this.connectByDefault = connectByDefault;
+    }
+    
+    /**
+     * Constructor with Schema Registry configuration
+     */
+    public ClusterInfo(String name, String brokerUrls, boolean connectByDefault,
+                      AuthenticationType authenticationType, AuthenticationConfig authenticationConfig,
+                      boolean schemaRegistryEnabled, String schemaRegistryUrl,
+                      AuthenticationType schemaRegistryAuthType, AuthenticationConfig schemaRegistryAuthConfig) {
+        this(name, brokerUrls, connectByDefault, authenticationType, authenticationConfig);
+        this.schemaRegistryEnabled = schemaRegistryEnabled;
+        this.schemaRegistryUrl = schemaRegistryUrl;
+        this.schemaRegistryAuthType = schemaRegistryAuthType != null ? schemaRegistryAuthType : AuthenticationType.NONE;
+        this.schemaRegistryAuthConfig = schemaRegistryAuthConfig;
     }
     
     // Getters and setters
@@ -106,6 +126,49 @@ public class ClusterInfo {
     }
     
     /**
+     * Check if Schema Registry is enabled for this cluster
+     */
+    public boolean isSchemaRegistryEnabled() {
+        return schemaRegistryEnabled;
+    }
+    
+    public void setSchemaRegistryEnabled(boolean schemaRegistryEnabled) {
+        this.schemaRegistryEnabled = schemaRegistryEnabled;
+    }
+    
+    public String getSchemaRegistryUrl() {
+        return schemaRegistryUrl;
+    }
+    
+    public void setSchemaRegistryUrl(String schemaRegistryUrl) {
+        this.schemaRegistryUrl = schemaRegistryUrl;
+    }
+    
+    public AuthenticationType getSchemaRegistryAuthType() {
+        return schemaRegistryAuthType != null ? schemaRegistryAuthType : AuthenticationType.NONE;
+    }
+    
+    public void setSchemaRegistryAuthType(AuthenticationType schemaRegistryAuthType) {
+        this.schemaRegistryAuthType = schemaRegistryAuthType != null ? schemaRegistryAuthType : AuthenticationType.NONE;
+    }
+    
+    public AuthenticationConfig getSchemaRegistryAuthConfig() {
+        return schemaRegistryAuthConfig;
+    }
+    
+    public void setSchemaRegistryAuthConfig(AuthenticationConfig schemaRegistryAuthConfig) {
+        this.schemaRegistryAuthConfig = schemaRegistryAuthConfig;
+    }
+    
+    /**
+     * Check if Schema Registry requires authentication
+     */
+    public boolean requiresSchemaRegistryAuthentication() {
+        return schemaRegistryEnabled && schemaRegistryAuthType != null && 
+               schemaRegistryAuthType != AuthenticationType.NONE;
+    }
+    
+    /**
      * Get a copy of this cluster info with masked authentication data for display
      */
     public ClusterInfo createMaskedCopy() {
@@ -116,6 +179,15 @@ public class ClusterInfo {
         if (this.authenticationConfig != null) {
             masked.authenticationConfig = this.authenticationConfig.createMaskedCopy();
         }
+        
+        // Copy Schema Registry configuration
+        masked.schemaRegistryEnabled = this.schemaRegistryEnabled;
+        masked.schemaRegistryUrl = this.schemaRegistryUrl;
+        masked.schemaRegistryAuthType = this.schemaRegistryAuthType;
+        if (this.schemaRegistryAuthConfig != null) {
+            masked.schemaRegistryAuthConfig = this.schemaRegistryAuthConfig.createMaskedCopy();
+        }
+        
         return masked;
     }
     
