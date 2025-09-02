@@ -115,16 +115,21 @@ public class AuthenticationSecurityUtil {
      * Encrypt cluster authentication credentials for storage
      */
     public static ClusterInfo encryptClusterCredentials(ClusterInfo cluster) {
-        if (cluster == null || !cluster.requiresAuthentication()) {
+        if (cluster == null) {
             return cluster;
         }
         
+        // Use the full constructor to handle Schema Registry fields
         ClusterInfo encrypted = new ClusterInfo(
             cluster.getName(),
             cluster.getBrokerUrls(),
             cluster.isConnectByDefault(),
             cluster.getAuthenticationType(),
-            encryptCredentials(cluster.getAuthenticationConfig())
+            cluster.requiresAuthentication() ? encryptCredentials(cluster.getAuthenticationConfig()) : cluster.getAuthenticationConfig(),
+            cluster.isSchemaRegistryEnabled(),
+            cluster.getSchemaRegistryUrl(),
+            cluster.getSchemaRegistryAuthType(),
+            cluster.requiresSchemaRegistryAuthentication() ? encryptCredentials(cluster.getSchemaRegistryAuthConfig()) : cluster.getSchemaRegistryAuthConfig()
         );
         
         encrypted.setStatus(cluster.getStatus());
@@ -137,16 +142,21 @@ public class AuthenticationSecurityUtil {
      * Decrypt cluster authentication credentials for use
      */
     public static ClusterInfo decryptClusterCredentials(ClusterInfo cluster) {
-        if (cluster == null || !cluster.requiresAuthentication()) {
+        if (cluster == null) {
             return cluster;
         }
         
+        // Use the full constructor to handle Schema Registry fields
         ClusterInfo decrypted = new ClusterInfo(
             cluster.getName(),
             cluster.getBrokerUrls(),
             cluster.isConnectByDefault(),
             cluster.getAuthenticationType(),
-            decryptCredentials(cluster.getAuthenticationConfig())
+            cluster.requiresAuthentication() ? decryptCredentials(cluster.getAuthenticationConfig()) : cluster.getAuthenticationConfig(),
+            cluster.isSchemaRegistryEnabled(),
+            cluster.getSchemaRegistryUrl(),
+            cluster.getSchemaRegistryAuthType(),
+            cluster.requiresSchemaRegistryAuthentication() ? decryptCredentials(cluster.getSchemaRegistryAuthConfig()) : cluster.getSchemaRegistryAuthConfig()
         );
         
         decrypted.setStatus(cluster.getStatus());

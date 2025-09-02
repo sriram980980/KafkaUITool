@@ -97,6 +97,71 @@ public class DialogHelper {
             authDetailsContainer.getChildren().addAll(authFields.getFieldsForType(authTypeCombo.getValue()));
         }
         
+        // Schema Registry section
+        Label schemaRegistryLabel = new Label("Schema Registry:");
+        schemaRegistryLabel.setStyle("-fx-font-weight: bold;");
+        
+        CheckBox enableSchemaRegistryBox = new CheckBox("Enable Schema Registry");
+        if (existingCluster != null) {
+            enableSchemaRegistryBox.setSelected(existingCluster.isSchemaRegistryEnabled());
+        }
+        
+        // Schema Registry URL field
+        TextField schemaRegistryUrlField = new TextField();
+        schemaRegistryUrlField.setPromptText("http://localhost:8081");
+        if (existingCluster != null && existingCluster.getSchemaRegistryUrl() != null) {
+            schemaRegistryUrlField.setText(existingCluster.getSchemaRegistryUrl());
+        }
+        
+        // Schema Registry authentication
+        ComboBox<AuthenticationType> schemaAuthTypeCombo = new ComboBox<>(FXCollections.observableArrayList(AuthenticationType.values()));
+        schemaAuthTypeCombo.setValue(existingCluster != null ? existingCluster.getSchemaRegistryAuthType() : AuthenticationType.NONE);
+        
+        // Schema Registry authentication details container
+        VBox schemaAuthDetailsContainer = new VBox(10);
+        
+        // Create Schema Registry authentication fields
+        AuthenticationFields schemaAuthFields = new AuthenticationFields(existingCluster != null ? existingCluster.getSchemaRegistryAuthConfig() : null);
+        
+        // Update Schema Registry authentication fields when type changes
+        schemaAuthTypeCombo.setOnAction(e -> {
+            schemaAuthDetailsContainer.getChildren().clear();
+            AuthenticationType selectedType = schemaAuthTypeCombo.getValue();
+            if (selectedType != AuthenticationType.NONE) {
+                schemaAuthDetailsContainer.getChildren().addAll(schemaAuthFields.getFieldsForType(selectedType));
+            }
+        });
+        
+        // Initialize Schema Registry auth fields with current type
+        if (schemaAuthTypeCombo.getValue() != AuthenticationType.NONE) {
+            schemaAuthDetailsContainer.getChildren().addAll(schemaAuthFields.getFieldsForType(schemaAuthTypeCombo.getValue()));
+        }
+        
+        // Schema Registry fields container (hidden by default)
+        VBox schemaRegistryContainer = new VBox(10);
+        GridPane schemaRegistryGrid = new GridPane();
+        schemaRegistryGrid.setHgap(10);
+        schemaRegistryGrid.setVgap(10);
+        schemaRegistryGrid.add(new Label("URL:"), 0, 0);
+        schemaRegistryGrid.add(schemaRegistryUrlField, 1, 0);
+        
+        schemaRegistryContainer.getChildren().addAll(
+            schemaRegistryGrid,
+            new Label("Authentication Type:"),
+            schemaAuthTypeCombo,
+            schemaAuthDetailsContainer
+        );
+        
+        // Show/hide Schema Registry fields based on checkbox
+        schemaRegistryContainer.setVisible(enableSchemaRegistryBox.isSelected());
+        schemaRegistryContainer.setManaged(enableSchemaRegistryBox.isSelected());
+        
+        enableSchemaRegistryBox.setOnAction(e -> {
+            boolean enabled = enableSchemaRegistryBox.isSelected();
+            schemaRegistryContainer.setVisible(enabled);
+            schemaRegistryContainer.setManaged(enabled);
+        });
+        
         // Add all components to main container
         mainContainer.getChildren().addAll(
             new Label("Connection Details:"),
@@ -104,7 +169,11 @@ public class DialogHelper {
             new Separator(),
             authLabel,
             authTypeCombo,
-            authDetailsContainer
+            authDetailsContainer,
+            new Separator(),
+            schemaRegistryLabel,
+            enableSchemaRegistryBox,
+            schemaRegistryContainer
         );
         
         ScrollPane scrollPane = new ScrollPane(mainContainer);
@@ -137,7 +206,45 @@ public class DialogHelper {
                     }
                 }
                 
-                ClusterInfo cluster = new ClusterInfo(name, brokers, connectByDefaultBox.isSelected(), authType, authConfig);
+                // Handle Schema Registry configuration
+                boolean schemaRegistryEnabled = enableSchemaRegistryBox.isSelected();
+                String schemaRegistryUrl = null;
+                AuthenticationType schemaAuthType = AuthenticationType.NONE;
+                AuthenticationConfig schemaAuthConfig = null;
+                
+                if (schemaRegistryEnabled) {
+                    schemaRegistryUrl = schemaRegistryUrlField.getText().trim();
+                    
+                    // Validate Schema Registry URL
+                    if (schemaRegistryUrl.isEmpty()) {
+                        showErrorDialog("Validation Error", "Schema Registry URL Required", 
+                            "Please enter a Schema Registry URL when Schema Registry is enabled.");
+                        return null;
+                    }
+                    
+                    // Validate URL format
+                    if (!schemaRegistryUrl.startsWith("http://") && !schemaRegistryUrl.startsWith("https://")) {
+                        showErrorDialog("Validation Error", "Invalid Schema Registry URL", 
+                            "Schema Registry URL must start with http:// or https://");
+                        return null;
+                    }
+                    
+                    schemaAuthType = schemaAuthTypeCombo.getValue();
+                    
+                    if (schemaAuthType != AuthenticationType.NONE) {
+                        schemaAuthConfig = schemaAuthFields.createAuthenticationConfig(schemaAuthType);
+                        
+                        // Validate Schema Registry authentication configuration
+                        if (!KafkaAuthenticationUtil.validateAuthenticationConfig(schemaAuthType, schemaAuthConfig)) {
+                            showErrorDialog("Validation Error", "Invalid Schema Registry Authentication Configuration", 
+                                "Please fill in all required authentication fields for Schema Registry " + schemaAuthType.getDisplayName());
+                            return null;
+                        }
+                    }
+                }
+                
+                ClusterInfo cluster = new ClusterInfo(name, brokers, connectByDefaultBox.isSelected(), 
+                    authType, authConfig, schemaRegistryEnabled, schemaRegistryUrl, schemaAuthType, schemaAuthConfig);
                 
                 // Copy existing status and version if editing
                 if (existingCluster != null) {
