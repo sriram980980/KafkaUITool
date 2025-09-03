@@ -99,6 +99,13 @@
             <artifactId>micrometer-core</artifactId>
         </dependency>
 
+        <!-- Dynamic Compilation Support -->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+            <version>3.1.10</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

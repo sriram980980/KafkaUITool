@@ -5,6 +5,7 @@ import com.kafkatool.model.AuthenticationType;
 import com.kafkatool.model.ClusterInfo;
 import com.kafkatool.model.KafkaMessage;
 import com.kafkatool.model.TopicInfo;
+import com.kafkatool.service.SchemaAwareMessageService;
 import com.kafkatool.util.KafkaAuthenticationUtil;
 import com.kafkatool.util.JsonFormatter;
 import javafx.application.Platform;
@@ -162,6 +163,31 @@ public class DialogHelper {
             schemaRegistryContainer.setManaged(enabled);
         });
         
+        // Schema Format Support section
+        Label schemaFormatLabel = new Label("Schema Format Support:");
+        schemaFormatLabel.setStyle("-fx-font-weight: bold;");
+        
+        CheckBox enableAvroBox = new CheckBox("Enable Avro Support");
+        CheckBox enableProtobufBox = new CheckBox("Enable Protobuf Support");
+        
+        ComboBox<String> defaultFormatCombo = new ComboBox<>(FXCollections.observableArrayList(
+            "STRING", "JSON", "AVRO", "PROTOBUF"));
+        defaultFormatCombo.setValue("STRING");
+        
+        if (existingCluster != null) {
+            enableAvroBox.setSelected(existingCluster.isAvroSupportEnabled());
+            enableProtobufBox.setSelected(existingCluster.isProtobufSupportEnabled());
+            defaultFormatCombo.setValue(existingCluster.getDefaultMessageFormat());
+        }
+        
+        GridPane schemaFormatGrid = new GridPane();
+        schemaFormatGrid.setHgap(10);
+        schemaFormatGrid.setVgap(10);
+        schemaFormatGrid.add(enableAvroBox, 0, 0);
+        schemaFormatGrid.add(enableProtobufBox, 1, 0);
+        schemaFormatGrid.add(new Label("Default Format:"), 0, 1);
+        schemaFormatGrid.add(defaultFormatCombo, 1, 1);
+        
         // Add all components to main container
         mainContainer.getChildren().addAll(
             new Label("Connection Details:"),
@@ -173,7 +199,10 @@ public class DialogHelper {
             new Separator(),
             schemaRegistryLabel,
             enableSchemaRegistryBox,
-            schemaRegistryContainer
+            schemaRegistryContainer,
+            new Separator(),
+            schemaFormatLabel,
+            schemaFormatGrid
         );
         
         ScrollPane scrollPane = new ScrollPane(mainContainer);
@@ -249,8 +278,14 @@ public class DialogHelper {
                     }
                 }
                 
+                // Handle schema format preferences
+                boolean avroSupport = enableAvroBox.isSelected();
+                boolean protobufSupport = enableProtobufBox.isSelected();
+                String defaultFormat = defaultFormatCombo.getValue();
+                
                 ClusterInfo cluster = new ClusterInfo(name, brokers, connectByDefaultBox.isSelected(), 
-                    authType, authConfig, schemaRegistryEnabled, schemaRegistryUrl, schemaAuthType, schemaAuthConfig);
+                    authType, authConfig, schemaRegistryEnabled, schemaRegistryUrl, schemaAuthType, schemaAuthConfig,
+                    avroSupport, protobufSupport, defaultFormat);
                 
                 // Copy existing status and version if editing
                 if (existingCluster != null) {
@@ -855,6 +890,13 @@ public class DialogHelper {
      * Show message preview dialog with expandable sections
      */
     public static void showMessagePreviewDialog(KafkaMessage message) {
+        showMessagePreviewDialog(message, null, null);
+    }
+    
+    /**
+     * Show message preview dialog with schema-aware parsing
+     */
+    public static void showMessagePreviewDialog(KafkaMessage message, ClusterInfo clusterInfo, TopicInfo topicInfo) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Message Preview");
         dialog.setHeaderText("Topic: " + message.getTopic() + " | Partition: " + 
@@ -887,12 +929,37 @@ public class DialogHelper {
         keyArea.setWrapText(true);
         keyPane.setContent(keyArea);
         
-        // Value section (expandable)
+        // Value section (expandable) with schema-aware parsing
         TitledPane valuePane = new TitledPane();
-        valuePane.setText("Message Value" + (message.getValue() != null ? " (" + message.getValue().length() + " chars)" : " (null)"));
+        String valuePaneTitle = "Message Value" + (message.getValue() != null ? " (" + message.getValue().length() + " chars)" : " (null)");
+        
+        // Try schema-aware parsing if cluster info is available
+        String displayValue = message.getValue() != null ? message.getValue() : "null";
+        String processingInfo = "";
+        
+        if (clusterInfo != null && message.getValue() != null) {
+            try {
+                SchemaAwareMessageService messageService = new SchemaAwareMessageService();
+                SchemaAwareMessageService.MessageParseResult parseResult = 
+                    messageService.parseMessage(message.getValue(), clusterInfo, topicInfo);
+                
+                if (parseResult.isSuccess()) {
+                    displayValue = parseResult.getFormattedMessage();
+                    processingInfo = " [" + parseResult.getSchemaType() + "]";
+                    if (parseResult.getProcessingInfo() != null) {
+                        processingInfo += " - " + parseResult.getProcessingInfo();
+                    }
+                }
+            } catch (Exception e) {
+                // Fall back to original value if parsing fails
+                processingInfo = " [Parse Error: " + e.getMessage() + "]";
+            }
+        }
+        
+        valuePane.setText(valuePaneTitle + processingInfo);
         valuePane.setExpanded(true);
         TextArea valueArea = new TextArea();
-        valueArea.setText(message.getValue() != null ? message.getValue() : "null");
+        valueArea.setText(displayValue);
         valueArea.setEditable(false);
         valueArea.setPrefRowCount(12);
         valueArea.setWrapText(true);

@@ -22,6 +22,11 @@ public class ClusterInfo {
     private AuthenticationType schemaRegistryAuthType = AuthenticationType.NONE;
     private AuthenticationConfig schemaRegistryAuthConfig;
     
+    // Schema format preferences
+    private boolean avroSupportEnabled = false;
+    private boolean protobufSupportEnabled = false;
+    private String defaultMessageFormat = "STRING"; // Default to STRING format
+    
     public ClusterInfo() {}
     
     public ClusterInfo(String name, String brokerUrls) {
@@ -59,6 +64,21 @@ public class ClusterInfo {
         this.schemaRegistryUrl = schemaRegistryUrl;
         this.schemaRegistryAuthType = schemaRegistryAuthType != null ? schemaRegistryAuthType : AuthenticationType.NONE;
         this.schemaRegistryAuthConfig = schemaRegistryAuthConfig;
+    }
+    
+    /**
+     * Constructor with full schema configuration
+     */
+    public ClusterInfo(String name, String brokerUrls, boolean connectByDefault,
+                      AuthenticationType authenticationType, AuthenticationConfig authenticationConfig,
+                      boolean schemaRegistryEnabled, String schemaRegistryUrl,
+                      AuthenticationType schemaRegistryAuthType, AuthenticationConfig schemaRegistryAuthConfig,
+                      boolean avroSupportEnabled, boolean protobufSupportEnabled, String defaultMessageFormat) {
+        this(name, brokerUrls, connectByDefault, authenticationType, authenticationConfig,
+             schemaRegistryEnabled, schemaRegistryUrl, schemaRegistryAuthType, schemaRegistryAuthConfig);
+        this.avroSupportEnabled = avroSupportEnabled;
+        this.protobufSupportEnabled = protobufSupportEnabled;
+        this.defaultMessageFormat = defaultMessageFormat != null ? defaultMessageFormat : "STRING";
     }
     
     // Getters and setters
@@ -168,6 +188,31 @@ public class ClusterInfo {
                schemaRegistryAuthType != AuthenticationType.NONE;
     }
     
+    // Schema format preference methods
+    public boolean isAvroSupportEnabled() {
+        return avroSupportEnabled;
+    }
+    
+    public void setAvroSupportEnabled(boolean avroSupportEnabled) {
+        this.avroSupportEnabled = avroSupportEnabled;
+    }
+    
+    public boolean isProtobufSupportEnabled() {
+        return protobufSupportEnabled;
+    }
+    
+    public void setProtobufSupportEnabled(boolean protobufSupportEnabled) {
+        this.protobufSupportEnabled = protobufSupportEnabled;
+    }
+    
+    public String getDefaultMessageFormat() {
+        return defaultMessageFormat;
+    }
+    
+    public void setDefaultMessageFormat(String defaultMessageFormat) {
+        this.defaultMessageFormat = defaultMessageFormat != null ? defaultMessageFormat : "STRING";
+    }
+    
     /**
      * Get a copy of this cluster info with masked authentication data for display
      */
@@ -187,6 +232,11 @@ public class ClusterInfo {
         if (this.schemaRegistryAuthConfig != null) {
             masked.schemaRegistryAuthConfig = this.schemaRegistryAuthConfig.createMaskedCopy();
         }
+        
+        // Copy schema format preferences
+        masked.avroSupportEnabled = this.avroSupportEnabled;
+        masked.protobufSupportEnabled = this.protobufSupportEnabled;
+        masked.defaultMessageFormat = this.defaultMessageFormat;
         
         return masked;
     }
