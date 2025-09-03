@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -1013,5 +1014,166 @@ public class KafkaServiceImpl implements KafkaService {
         KafkaAuthenticationUtil.configureAuthentication(props, clusterInfo);
         
         return props;
+    }
+    
+    @Override
+    public CompletableFuture<List<KafkaMessage>> searchMessagesByTimestampAsync(String brokerUrls,
+                                                                               String topicName,
+                                                                               int partition,
+                                                                               long fromTimestamp,
+                                                                               long toTimestamp,
+                                                                               int maxResults) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = new Properties();
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            props.put(ConsumerConfig.GROUP_ID_CONFIG, CONSUMER_GROUP_ID + "-timestamp-search-" + UUID.randomUUID());
+            props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+            
+            try (Consumer<String, String> consumer = new KafkaConsumer<>(props)) {
+                TopicPartition topicPartition = new TopicPartition(topicName, partition);
+                consumer.assign(Collections.singleton(topicPartition));
+                
+                // Seek to the offset at the from timestamp
+                Map<TopicPartition, Long> timestampsToSearch = new HashMap<>();
+                timestampsToSearch.put(topicPartition, fromTimestamp);
+                Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes = consumer.offsetsForTimes(timestampsToSearch);
+                
+                OffsetAndTimestamp offsetAndTimestamp = offsetsForTimes.get(topicPartition);
+                if (offsetAndTimestamp != null) {
+                    consumer.seek(topicPartition, offsetAndTimestamp.offset());
+                } else {
+                    consumer.seekToBeginning(Collections.singleton(topicPartition));
+                }
+                
+                List<KafkaMessage> matchingMessages = new ArrayList<>();
+                long deadline = System.currentTimeMillis() + 30000; // 30 second timeout
+                
+                while (matchingMessages.size() < maxResults && System.currentTimeMillis() < deadline) {
+                    var records = consumer.poll(Duration.ofMillis(1000));
+                    if (records.isEmpty()) break;
+                    
+                    for (ConsumerRecord<String, String> record : records) {
+                        if (record.partition() == partition) {
+                            long recordTimestamp = record.timestamp();
+                            
+                            // Check if record timestamp is within range
+                            if (recordTimestamp >= fromTimestamp && recordTimestamp <= toTimestamp) {
+                                matchingMessages.add(convertToKafkaMessage(record));
+                                if (matchingMessages.size() >= maxResults) break;
+                            } else if (recordTimestamp > toTimestamp) {
+                                // We've passed the end time, so stop searching
+                                return matchingMessages;
+                            }
+                        }
+                    }
+                }
+                
+                return matchingMessages;
+                
+            } catch (Exception e) {
+                logger.error("Failed to search messages by timestamp in {}:{}: {}", topicName, partition, e.getMessage());
+                return new ArrayList<>();
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<List<KafkaMessage>> searchMessagesByPatternAndTimestampAsync(String brokerUrls,
+                                                                                         String topicName,
+                                                                                         int partition,
+                                                                                         String searchPattern,
+                                                                                         boolean searchInKey,
+                                                                                         boolean searchInValue,
+                                                                                         boolean searchInHeaders,
+                                                                                         long fromTimestamp,
+                                                                                         long toTimestamp,
+                                                                                         int maxResults) {
+        return CompletableFuture.supplyAsync(() -> {
+            Properties props = new Properties();
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrls);
+            props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            props.put(ConsumerConfig.GROUP_ID_CONFIG, CONSUMER_GROUP_ID + "-pattern-timestamp-search-" + UUID.randomUUID());
+            props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+            
+            try (Consumer<String, String> consumer = new KafkaConsumer<>(props)) {
+                TopicPartition topicPartition = new TopicPartition(topicName, partition);
+                consumer.assign(Collections.singleton(topicPartition));
+                
+                // Seek to the offset at the from timestamp
+                Map<TopicPartition, Long> timestampsToSearch = new HashMap<>();
+                timestampsToSearch.put(topicPartition, fromTimestamp);
+                Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes = consumer.offsetsForTimes(timestampsToSearch);
+                
+                OffsetAndTimestamp offsetAndTimestamp = offsetsForTimes.get(topicPartition);
+                if (offsetAndTimestamp != null) {
+                    consumer.seek(topicPartition, offsetAndTimestamp.offset());
+                } else {
+                    consumer.seekToBeginning(Collections.singleton(topicPartition));
+                }
+                
+                List<KafkaMessage> matchingMessages = new ArrayList<>();
+                long deadline = System.currentTimeMillis() + 30000; // 30 second timeout
+                
+                while (matchingMessages.size() < maxResults && System.currentTimeMillis() < deadline) {
+                    var records = consumer.poll(Duration.ofMillis(1000));
+                    if (records.isEmpty()) break;
+                    
+                    for (ConsumerRecord<String, String> record : records) {
+                        if (record.partition() == partition) {
+                            long recordTimestamp = record.timestamp();
+                            
+                            // Check if record timestamp is within range
+                            if (recordTimestamp >= fromTimestamp && recordTimestamp <= toTimestamp) {
+                                boolean matches = false;
+                                
+                                // Check pattern match
+                                if (searchInKey && record.key() != null && 
+                                    record.key().toLowerCase().contains(searchPattern.toLowerCase())) {
+                                    matches = true;
+                                }
+                                
+                                if (searchInValue && record.value() != null && 
+                                    record.value().toLowerCase().contains(searchPattern.toLowerCase())) {
+                                    matches = true;
+                                }
+                                
+                                if (searchInHeaders && record.headers() != null) {
+                                    for (var header : record.headers()) {
+                                        String headerKey = header.key();
+                                        String headerValue = header.value() != null ? 
+                                            new String(header.value()) : "";
+                                        
+                                        if ((headerKey.toLowerCase().contains(searchPattern.toLowerCase()) ||
+                                             headerValue.toLowerCase().contains(searchPattern.toLowerCase()))) {
+                                            matches = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (matches) {
+                                    matchingMessages.add(convertToKafkaMessage(record));
+                                    if (matchingMessages.size() >= maxResults) break;
+                                }
+                            } else if (recordTimestamp > toTimestamp) {
+                                // We've passed the end time, so stop searching
+                                return matchingMessages;
+                            }
+                        }
+                    }
+                }
+                
+                return matchingMessages;
+                
+            } catch (Exception e) {
+                logger.error("Failed to search messages by pattern and timestamp in {}:{}: {}", topicName, partition, e.getMessage());
+                return new ArrayList<>();
+            }
+        });
     }
 }

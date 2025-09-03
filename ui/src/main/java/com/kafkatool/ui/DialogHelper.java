@@ -198,10 +198,13 @@ public class DialogHelper {
                 if (authType != AuthenticationType.NONE) {
                     authConfig = authFields.createAuthenticationConfig(authType);
                     
-                    // Validate authentication configuration
-                    if (!KafkaAuthenticationUtil.validateAuthenticationConfig(authType, authConfig)) {
-                        showErrorDialog("Validation Error", "Invalid Authentication Configuration", 
-                            "Please fill in all required authentication fields for " + authType.getDisplayName());
+                    // Validate authentication configuration with detailed error reporting
+                    KafkaAuthenticationUtil.ValidationResult result = 
+                        KafkaAuthenticationUtil.validateAuthenticationConfigDetailed(authType, authConfig);
+                    if (!result.isValid()) {
+                        showErrorDialog("Authentication Validation Error", 
+                            "Invalid " + authType.getDisplayName() + " Configuration", 
+                            result.getErrorMessage());
                         return null;
                     }
                 }
@@ -234,10 +237,13 @@ public class DialogHelper {
                     if (schemaAuthType != AuthenticationType.NONE) {
                         schemaAuthConfig = schemaAuthFields.createAuthenticationConfig(schemaAuthType);
                         
-                        // Validate Schema Registry authentication configuration
-                        if (!KafkaAuthenticationUtil.validateAuthenticationConfig(schemaAuthType, schemaAuthConfig)) {
-                            showErrorDialog("Validation Error", "Invalid Schema Registry Authentication Configuration", 
-                                "Please fill in all required authentication fields for Schema Registry " + schemaAuthType.getDisplayName());
+                        // Validate Schema Registry authentication configuration with detailed error reporting
+                        KafkaAuthenticationUtil.ValidationResult result = 
+                            KafkaAuthenticationUtil.validateAuthenticationConfigDetailed(schemaAuthType, schemaAuthConfig);
+                        if (!result.isValid()) {
+                            showErrorDialog("Schema Registry Authentication Validation Error", 
+                                "Invalid Schema Registry " + schemaAuthType.getDisplayName() + " Configuration", 
+                                result.getErrorMessage());
                             return null;
                         }
                     }
@@ -705,13 +711,17 @@ public class DialogHelper {
         ButtonType searchButtonType = new ButtonType("Search", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(searchButtonType, ButtonType.CANCEL);
         
+        VBox mainContainer = new VBox(15);
+        mainContainer.setPadding(new Insets(20));
+        mainContainer.setPrefWidth(500);
+        
+        // Pattern and search options
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
         
         TextField patternField = new TextField();
-        patternField.setPromptText("Search pattern");
+        patternField.setPromptText("Search pattern (leave empty for timestamp-only search)");
         CheckBox searchKeyBox = new CheckBox("Search in key");
         CheckBox searchValueBox = new CheckBox("Search in value");
         CheckBox searchHeadersBox = new CheckBox("Search in headers");
@@ -731,18 +741,109 @@ public class DialogHelper {
         grid.add(new Label("Max Results:"), 0, 5);
         grid.add(maxResultsSpinner, 1, 5);
         
-        dialog.getDialogPane().setContent(grid);
+        // Timestamp filtering section
+        TitledPane timestampPane = new TitledPane();
+        timestampPane.setText("Timestamp Filtering (Optional)");
+        timestampPane.setExpanded(false);
+        
+        VBox timestampContent = new VBox(10);
+        timestampContent.setPadding(new Insets(10));
+        
+        CheckBox useTimestampFilterBox = new CheckBox("Enable timestamp filtering");
+        
+        GridPane timestampGrid = new GridPane();
+        timestampGrid.setHgap(10);
+        timestampGrid.setVgap(10);
+        timestampGrid.setDisable(true);
+        
+        DatePicker fromDatePicker = new DatePicker();
+        fromDatePicker.setPromptText("From date");
+        Spinner<Integer> fromHourSpinner = new Spinner<>(0, 23, 0);
+        Spinner<Integer> fromMinuteSpinner = new Spinner<>(0, 59, 0);
+        
+        DatePicker toDatePicker = new DatePicker();
+        toDatePicker.setPromptText("To date");
+        Spinner<Integer> toHourSpinner = new Spinner<>(0, 23, 23);
+        Spinner<Integer> toMinuteSpinner = new Spinner<>(0, 59, 59);
+        
+        // Set default dates to today
+        fromDatePicker.setValue(java.time.LocalDate.now());
+        toDatePicker.setValue(java.time.LocalDate.now());
+        
+        HBox fromTimeBox = new HBox(5);
+        fromTimeBox.getChildren().addAll(fromHourSpinner, new Label(":"), fromMinuteSpinner);
+        
+        HBox toTimeBox = new HBox(5);
+        toTimeBox.getChildren().addAll(toHourSpinner, new Label(":"), toMinuteSpinner);
+        
+        timestampGrid.add(new Label("From:"), 0, 0);
+        timestampGrid.add(fromDatePicker, 1, 0);
+        timestampGrid.add(fromTimeBox, 2, 0);
+        timestampGrid.add(new Label("To:"), 0, 1);
+        timestampGrid.add(toDatePicker, 1, 1);
+        timestampGrid.add(toTimeBox, 2, 1);
+        
+        // Enable/disable timestamp controls based on checkbox
+        useTimestampFilterBox.setOnAction(e -> {
+            timestampGrid.setDisable(!useTimestampFilterBox.isSelected());
+            if (useTimestampFilterBox.isSelected()) {
+                timestampPane.setExpanded(true);
+            }
+        });
+        
+        timestampContent.getChildren().addAll(useTimestampFilterBox, timestampGrid);
+        timestampPane.setContent(timestampContent);
+        
+        mainContainer.getChildren().addAll(grid, timestampPane);
+        dialog.getDialogPane().setContent(mainContainer);
         
         Platform.runLater(patternField::requestFocus);
         
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == searchButtonType) {
                 String pattern = patternField.getText().trim();
-                if (!pattern.isEmpty()) {
-                    return new SearchCriteria(pattern, searchKeyBox.isSelected(), 
-                        searchValueBox.isSelected(), searchHeadersBox.isSelected(),
-                        maxResultsSpinner.getValue(), enablePreviewBox.isSelected());
+                boolean useTimestampFilter = useTimestampFilterBox.isSelected();
+                
+                // Either pattern or timestamp filter must be specified
+                if (pattern.isEmpty() && !useTimestampFilter) {
+                    showErrorDialog("Search Error", "Invalid Search Criteria", 
+                        "Please enter a search pattern or enable timestamp filtering.");
+                    return null;
                 }
+                
+                Long fromTimestamp = null;
+                Long toTimestamp = null;
+                
+                if (useTimestampFilter) {
+                    try {
+                        java.time.LocalDateTime fromDateTime = java.time.LocalDateTime.of(
+                            fromDatePicker.getValue(), 
+                            java.time.LocalTime.of(fromHourSpinner.getValue(), fromMinuteSpinner.getValue())
+                        );
+                        java.time.LocalDateTime toDateTime = java.time.LocalDateTime.of(
+                            toDatePicker.getValue(), 
+                            java.time.LocalTime.of(toHourSpinner.getValue(), toMinuteSpinner.getValue())
+                        );
+                        
+                        fromTimestamp = fromDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+                        toTimestamp = toDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+                        
+                        if (fromTimestamp >= toTimestamp) {
+                            showErrorDialog("Search Error", "Invalid Timestamp Range", 
+                                "From timestamp must be before To timestamp.");
+                            return null;
+                        }
+                    } catch (Exception e) {
+                        showErrorDialog("Search Error", "Invalid Timestamp Format", 
+                            "Please select valid dates and times.");
+                        return null;
+                    }
+                }
+                
+                return new SearchCriteria(pattern, searchKeyBox.isSelected(), 
+                    searchValueBox.isSelected(), searchHeadersBox.isSelected(),
+                    maxResultsSpinner.getValue(), enablePreviewBox.isSelected(),
+                    useTimestampFilter, fromTimestamp, toTimestamp);
             }
             return null;
         });
@@ -938,15 +1039,28 @@ public class DialogHelper {
         private final boolean searchInHeaders;
         private final int maxResults;
         private final boolean enablePreview;
+        private final boolean useTimestampFilter;
+        private final Long fromTimestamp;
+        private final Long toTimestamp;
         
         public SearchCriteria(String searchPattern, boolean searchInKey, boolean searchInValue, 
                             boolean searchInHeaders, int maxResults, boolean enablePreview) {
+            this(searchPattern, searchInKey, searchInValue, searchInHeaders, maxResults, enablePreview,
+                false, null, null);
+        }
+        
+        public SearchCriteria(String searchPattern, boolean searchInKey, boolean searchInValue, 
+                            boolean searchInHeaders, int maxResults, boolean enablePreview,
+                            boolean useTimestampFilter, Long fromTimestamp, Long toTimestamp) {
             this.searchPattern = searchPattern;
             this.searchInKey = searchInKey;
             this.searchInValue = searchInValue;
             this.searchInHeaders = searchInHeaders;
             this.maxResults = maxResults;
             this.enablePreview = enablePreview;
+            this.useTimestampFilter = useTimestampFilter;
+            this.fromTimestamp = fromTimestamp;
+            this.toTimestamp = toTimestamp;
         }
         
         // Backward compatibility constructor
@@ -960,6 +1074,9 @@ public class DialogHelper {
         public boolean isSearchInHeaders() { return searchInHeaders; }
         public int getMaxResults() { return maxResults; }
         public boolean isEnablePreview() { return enablePreview; }
+        public boolean isUseTimestampFilter() { return useTimestampFilter; }
+        public Long getFromTimestamp() { return fromTimestamp; }
+        public Long getToTimestamp() { return toTimestamp; }
     }
     
     /**

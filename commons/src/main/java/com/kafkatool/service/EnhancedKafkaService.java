@@ -100,6 +100,25 @@ public interface EnhancedKafkaService extends KafkaService {
                                                                   int maxResults);
     
     /**
+     * Advanced search with regex patterns and timestamp filtering
+     */
+    CompletableFuture<List<KafkaMessage>> searchMessagesRegexWithTimestampAsync(String brokerUrls, String topicName,
+                                                                               int partition, String regexPattern,
+                                                                               boolean searchInKey, boolean searchInValue,
+                                                                               long fromTimestamp, long toTimestamp,
+                                                                               int maxResults);
+    
+    /**
+     * Get messages between specific timestamps (similar to offset-based search but time-based)
+     */
+    CompletableFuture<List<KafkaMessage>> getMessagesBetweenTimestampsAsync(String brokerUrls,
+                                                                           String topicName,
+                                                                           int partition,
+                                                                           long fromTimestamp,
+                                                                           long toTimestamp,
+                                                                           int maxResults);
+    
+    /**
      * Transform messages with custom logic
      */
     CompletableFuture<List<KafkaMessage>> transformMessagesAsync(String brokerUrls, String topicName,

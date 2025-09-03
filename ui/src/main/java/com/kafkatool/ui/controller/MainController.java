@@ -2213,31 +2213,15 @@ public class MainController implements Initializable {
             
             if (selectedPartition != null) {
                 // Search in selected partition only
-                CompletableFuture<List<KafkaMessage>> searchTask = kafkaService.searchMessagesAsync(
-                    currentCluster.getBrokerUrls(),
-                    currentTopic.getName(),
-                    selectedPartition,
-                    criteria.getSearchPattern(),
-                    criteria.isSearchInKey(),
-                    criteria.isSearchInValue(),
-                    criteria.isSearchInHeaders(),
-                    criteria.getMaxResults()
-                );
+                CompletableFuture<List<KafkaMessage>> searchTask = createSearchTask(
+                    criteria, selectedPartition, criteria.getMaxResults());
                 searchTasks.add(searchTask);
             } else {
                 // Search in all partitions
                 for (int i = 0; i < currentTopic.getPartitions(); i++) {
                     final int partition = i;
-                    CompletableFuture<List<KafkaMessage>> searchTask = kafkaService.searchMessagesAsync(
-                        currentCluster.getBrokerUrls(),
-                        currentTopic.getName(),
-                        partition,
-                        criteria.getSearchPattern(),
-                        criteria.isSearchInKey(),
-                        criteria.isSearchInValue(),
-                        criteria.isSearchInHeaders(),
-                        Math.min(criteria.getMaxResults() / currentTopic.getPartitions(), 100)
-                    );
+                    CompletableFuture<List<KafkaMessage>> searchTask = createSearchTask(
+                        criteria, partition, Math.min(criteria.getMaxResults() / currentTopic.getPartitions(), 100));
                     searchTasks.add(searchTask);
                 }
             }
@@ -2273,10 +2257,67 @@ public class MainController implements Initializable {
         });
     }
     
+    /**
+     * Create appropriate search task based on criteria (with or without timestamp filtering)
+     */
+    private CompletableFuture<List<KafkaMessage>> createSearchTask(DialogHelper.SearchCriteria criteria, 
+                                                                  int partition, int maxResults) {
+        String brokerUrls = currentCluster.getBrokerUrls();
+        String topicName = currentTopic.getName();
+        
+        if (criteria.isUseTimestampFilter()) {
+            // Use timestamp-based search
+            if (criteria.getSearchPattern() != null && !criteria.getSearchPattern().isEmpty()) {
+                // Search with both pattern and timestamp filtering
+                return kafkaService.searchMessagesByPatternAndTimestampAsync(
+                    brokerUrls, topicName, partition,
+                    criteria.getSearchPattern(),
+                    criteria.isSearchInKey(),
+                    criteria.isSearchInValue(),
+                    criteria.isSearchInHeaders(),
+                    criteria.getFromTimestamp(),
+                    criteria.getToTimestamp(),
+                    maxResults
+                );
+            } else {
+                // Search by timestamp only
+                return kafkaService.searchMessagesByTimestampAsync(
+                    brokerUrls, topicName, partition,
+                    criteria.getFromTimestamp(),
+                    criteria.getToTimestamp(),
+                    maxResults
+                );
+            }
+        } else {
+            // Use pattern-based search (original behavior)
+            return kafkaService.searchMessagesAsync(
+                brokerUrls, topicName, partition,
+                criteria.getSearchPattern(),
+                criteria.isSearchInKey(),
+                criteria.isSearchInValue(),
+                criteria.isSearchInHeaders(),
+                maxResults
+            );
+        }
+    }
+    
     private void showSearchResults(List<KafkaMessage> results, DialogHelper.SearchCriteria criteria) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Search Results - " + currentTopic.getName());
-        dialog.setHeaderText("Found " + results.size() + " messages matching pattern: " + criteria.getSearchPattern());
+        
+        String headerText;
+        if (criteria.isUseTimestampFilter()) {
+            if (criteria.getSearchPattern() != null && !criteria.getSearchPattern().isEmpty()) {
+                headerText = String.format("Found %d messages matching pattern: '%s' within specified time range", 
+                    results.size(), criteria.getSearchPattern());
+            } else {
+                headerText = String.format("Found %d messages within specified time range", results.size());
+            }
+        } else {
+            headerText = String.format("Found %d messages matching pattern: '%s'", 
+                results.size(), criteria.getSearchPattern());
+        }
+        dialog.setHeaderText(headerText);
         
         VBox content = new VBox(10);
         content.setPadding(new Insets(10));

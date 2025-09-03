@@ -221,4 +221,33 @@ public class EnhancedKafkaServiceImpl extends KafkaServiceImpl implements Enhanc
             // Stub implementation
         });
     }
+    
+    @Override
+    public CompletableFuture<List<KafkaMessage>> searchMessagesRegexWithTimestampAsync(String brokerUrls, String topicName,
+                                                                                      int partition, String regexPattern,
+                                                                                      boolean searchInKey, boolean searchInValue,
+                                                                                      long fromTimestamp, long toTimestamp,
+                                                                                      int maxResults) {
+        return CompletableFuture.supplyAsync(() -> {
+            // This would implement regex-based search with timestamp filtering
+            // For now, delegate to the pattern search with timestamp
+            try {
+                return searchMessagesByPatternAndTimestampAsync(brokerUrls, topicName, partition, 
+                    regexPattern, searchInKey, searchInValue, false, fromTimestamp, toTimestamp, maxResults).get();
+            } catch (Exception e) {
+                return new ArrayList<>();
+            }
+        });
+    }
+    
+    @Override
+    public CompletableFuture<List<KafkaMessage>> getMessagesBetweenTimestampsAsync(String brokerUrls,
+                                                                                  String topicName,
+                                                                                  int partition,
+                                                                                  long fromTimestamp,
+                                                                                  long toTimestamp,
+                                                                                  int maxResults) {
+        // Delegate to the timestamp search method implemented in parent class
+        return searchMessagesByTimestampAsync(brokerUrls, topicName, partition, fromTimestamp, toTimestamp, maxResults);
+    }
 }
