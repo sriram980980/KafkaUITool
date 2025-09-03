@@ -166,34 +166,91 @@ public class KafkaAuthenticationUtil {
      * Validate authentication configuration for the given type
      */
     public static boolean validateAuthenticationConfig(AuthenticationType type, AuthenticationConfig config) {
+        ValidationResult result = validateAuthenticationConfigDetailed(type, config);
+        return result.isValid();
+    }
+    
+    /**
+     * Validate authentication configuration with detailed error reporting
+     */
+    public static ValidationResult validateAuthenticationConfigDetailed(AuthenticationType type, AuthenticationConfig config) {
         if (type == AuthenticationType.NONE) {
-            return true;
+            return ValidationResult.valid();
         }
         
         if (config == null) {
-            return false;
+            return ValidationResult.invalid("Authentication configuration is required for " + type.getDisplayName());
         }
         
         switch (type) {
             case SASL_PLAIN:
             case SASL_SCRAM_SHA_256:
             case SASL_SCRAM_SHA_512:
-                return config.getUsername() != null && !config.getUsername().isEmpty() &&
-                       config.getPassword() != null && !config.getPassword().isEmpty();
+                if (config.getUsername() == null || config.getUsername().isEmpty()) {
+                    return ValidationResult.invalid("Username is required for " + type.getDisplayName());
+                }
+                if (config.getPassword() == null || config.getPassword().isEmpty()) {
+                    return ValidationResult.invalid("Password is required for " + type.getDisplayName());
+                }
+                return ValidationResult.valid();
             
             case SSL:
-                return config.getTruststoreLocation() != null && !config.getTruststoreLocation().isEmpty();
+                // For SSL, only truststore is required. Keystore is optional (for client authentication)
+                if (config.getTruststoreLocation() == null || config.getTruststoreLocation().isEmpty()) {
+                    return ValidationResult.invalid("Truststore location is required for SSL authentication");
+                }
+                return ValidationResult.valid();
             
             case SASL_SSL:
-                return (config.getTruststoreLocation() != null && !config.getTruststoreLocation().isEmpty()) &&
-                       (config.getUsername() != null && !config.getUsername().isEmpty() &&
-                        config.getPassword() != null && !config.getPassword().isEmpty());
+                // For SASL_SSL, we need both truststore and SASL credentials
+                if (config.getTruststoreLocation() == null || config.getTruststoreLocation().isEmpty()) {
+                    return ValidationResult.invalid("Truststore location is required for SASL over SSL");
+                }
+                if (config.getUsername() == null || config.getUsername().isEmpty()) {
+                    return ValidationResult.invalid("Username is required for SASL over SSL");
+                }
+                if (config.getPassword() == null || config.getPassword().isEmpty()) {
+                    return ValidationResult.invalid("Password is required for SASL over SSL");
+                }
+                return ValidationResult.valid();
             
             case KERBEROS:
-                return config.getKerberosServiceName() != null && !config.getKerberosServiceName().isEmpty();
+                if (config.getKerberosServiceName() == null || config.getKerberosServiceName().isEmpty()) {
+                    return ValidationResult.invalid("Kerberos service name is required for Kerberos authentication");
+                }
+                return ValidationResult.valid();
             
             default:
-                return true;
+                return ValidationResult.valid();
+        }
+    }
+    
+    /**
+     * Inner class for validation results with detailed error messages
+     */
+    public static class ValidationResult {
+        private final boolean valid;
+        private final String errorMessage;
+        
+        private ValidationResult(boolean valid, String errorMessage) {
+            this.valid = valid;
+            this.errorMessage = errorMessage;
+        }
+        
+        public static ValidationResult valid() {
+            return new ValidationResult(true, null);
+        }
+        
+        public static ValidationResult invalid(String errorMessage) {
+            return new ValidationResult(false, errorMessage);
+        }
+        
+        public boolean isValid() {
+            return valid;
+        }
+        
+        public String getErrorMessage() {
+            return errorMessage;
         }
     }
 }

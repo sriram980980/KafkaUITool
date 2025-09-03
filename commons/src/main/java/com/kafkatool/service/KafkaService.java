@@ -114,6 +114,30 @@ public interface KafkaService {
                                                              boolean searchInHeaders,
                                                              int maxResults);
                                                              
+    /**
+     * Search messages within a timestamp range
+     */
+    CompletableFuture<List<KafkaMessage>> searchMessagesByTimestampAsync(String brokerUrls,
+                                                                        String topicName,
+                                                                        int partition,
+                                                                        long fromTimestamp,
+                                                                        long toTimestamp,
+                                                                        int maxResults);
+    
+    /**
+     * Search messages by pattern within a timestamp range
+     */
+    CompletableFuture<List<KafkaMessage>> searchMessagesByPatternAndTimestampAsync(String brokerUrls,
+                                                                                  String topicName,
+                                                                                  int partition,
+                                                                                  String searchPattern,
+                                                                                  boolean searchInKey,
+                                                                                  boolean searchInValue,
+                                                                                  boolean searchInHeaders,
+                                                                                  long fromTimestamp,
+                                                                                  long toTimestamp,
+                                                                                  int maxResults);
+                                                             
     // Backward compatibility method
     default CompletableFuture<List<KafkaMessage>> searchMessagesAsync(String brokerUrls,
                                                                      String topicName,

@@ -198,10 +198,13 @@ public class DialogHelper {
                 if (authType != AuthenticationType.NONE) {
                     authConfig = authFields.createAuthenticationConfig(authType);
                     
-                    // Validate authentication configuration
-                    if (!KafkaAuthenticationUtil.validateAuthenticationConfig(authType, authConfig)) {
-                        showErrorDialog("Validation Error", "Invalid Authentication Configuration", 
-                            "Please fill in all required authentication fields for " + authType.getDisplayName());
+                    // Validate authentication configuration with detailed error reporting
+                    KafkaAuthenticationUtil.ValidationResult result = 
+                        KafkaAuthenticationUtil.validateAuthenticationConfigDetailed(authType, authConfig);
+                    if (!result.isValid()) {
+                        showErrorDialog("Authentication Validation Error", 
+                            "Invalid " + authType.getDisplayName() + " Configuration", 
+                            result.getErrorMessage());
                         return null;
                     }
                 }
@@ -234,10 +237,13 @@ public class DialogHelper {
                     if (schemaAuthType != AuthenticationType.NONE) {
                         schemaAuthConfig = schemaAuthFields.createAuthenticationConfig(schemaAuthType);
                         
-                        // Validate Schema Registry authentication configuration
-                        if (!KafkaAuthenticationUtil.validateAuthenticationConfig(schemaAuthType, schemaAuthConfig)) {
-                            showErrorDialog("Validation Error", "Invalid Schema Registry Authentication Configuration", 
-                                "Please fill in all required authentication fields for Schema Registry " + schemaAuthType.getDisplayName());
+                        // Validate Schema Registry authentication configuration with detailed error reporting
+                        KafkaAuthenticationUtil.ValidationResult result = 
+                            KafkaAuthenticationUtil.validateAuthenticationConfigDetailed(schemaAuthType, schemaAuthConfig);
+                        if (!result.isValid()) {
+                            showErrorDialog("Schema Registry Authentication Validation Error", 
+                                "Invalid Schema Registry " + schemaAuthType.getDisplayName() + " Configuration", 
+                                result.getErrorMessage());
                             return null;
                         }
                     }
