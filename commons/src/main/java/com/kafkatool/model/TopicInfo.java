@@ -13,6 +13,12 @@ public class TopicInfo {
     private short replicationFactor;
     private Map<String, String> configs;
     
+    // Schema configuration overrides
+    private String schemaFormat; // Can override cluster default
+    private String inlineAvroSchema;
+    private String inlineProtobufSchema;
+    private boolean useInlineSchema = false;
+    
     public TopicInfo() {}
     
     public TopicInfo(String name, int partitions, short replicationFactor) {
@@ -52,6 +58,39 @@ public class TopicInfo {
     
     public void setConfigs(Map<String, String> configs) {
         this.configs = configs;
+    }
+    
+    // Schema configuration methods
+    public String getSchemaFormat() {
+        return schemaFormat;
+    }
+    
+    public void setSchemaFormat(String schemaFormat) {
+        this.schemaFormat = schemaFormat;
+    }
+    
+    public String getInlineAvroSchema() {
+        return inlineAvroSchema;
+    }
+    
+    public void setInlineAvroSchema(String inlineAvroSchema) {
+        this.inlineAvroSchema = inlineAvroSchema;
+    }
+    
+    public String getInlineProtobufSchema() {
+        return inlineProtobufSchema;
+    }
+    
+    public void setInlineProtobufSchema(String inlineProtobufSchema) {
+        this.inlineProtobufSchema = inlineProtobufSchema;
+    }
+    
+    public boolean isUseInlineSchema() {
+        return useInlineSchema;
+    }
+    
+    public void setUseInlineSchema(boolean useInlineSchema) {
+        this.useInlineSchema = useInlineSchema;
     }
     
     @Override
