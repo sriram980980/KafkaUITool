@@ -2,7 +2,10 @@ package com.kafkatool.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kafkatool.model.AuthenticationConfig;
+import com.kafkatool.model.AuthenticationType;
 import com.kafkatool.model.SchemaInfo;
+import com.kafkatool.util.AuthenticationSecurityUtil;
 import org.apache.hc.client5.http.classic.methods.*;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -27,10 +30,18 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
     
     @Override
     public CompletableFuture<Boolean> testConnectionAsync(String schemaRegistryUrl) {
+        return testConnectionAsync(schemaRegistryUrl, AuthenticationType.NONE, null);
+    }
+    
+    @Override
+    public CompletableFuture<Boolean> testConnectionAsync(String schemaRegistryUrl, AuthenticationType authType, AuthenticationConfig authConfig) {
         return CompletableFuture.supplyAsync(() -> {
             try (CloseableHttpClient client = HttpClients.createDefault()) {
                 HttpGet request = new HttpGet(schemaRegistryUrl.endsWith("/") ? 
                     schemaRegistryUrl + "subjects" : schemaRegistryUrl + "/subjects");
+                
+                // Configure authentication if provided
+                configureAuthentication(request, authType, authConfig);
                 
                 var response = client.execute(request);
                 boolean connected = response.getCode() == HttpStatus.SC_OK;
@@ -338,6 +349,43 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
                 return compatibility;
             }
         });
+    }
+    
+    /**
+     * Configure authentication for HTTP requests to Schema Registry
+     */
+    private void configureAuthentication(HttpUriRequestBase request, AuthenticationType authType, AuthenticationConfig authConfig) {
+        if (authType == null || authType == AuthenticationType.NONE || authConfig == null) {
+            return;
+        }
+        
+        // Decrypt credentials if security util is available
+        try {
+            authConfig = AuthenticationSecurityUtil.decryptCredentials(authConfig);
+        } catch (Exception e) {
+            logger.debug("Security util not available, using credentials as-is: {}", e.getMessage());
+        }
+        
+        switch (authType) {
+            case SASL_PLAIN:
+            case SASL_SCRAM_SHA_256:
+            case SASL_SCRAM_SHA_512:
+                // Use HTTP Basic Authentication for SASL credentials
+                if (authConfig.getUsername() != null && authConfig.getPassword() != null) {
+                    // Use Base64 encoding for basic auth header
+                    String credentials = authConfig.getUsername() + ":" + authConfig.getPassword();
+                    String encodedCredentials = java.util.Base64.getEncoder().encodeToString(credentials.getBytes());
+                    request.setHeader("Authorization", "Basic " + encodedCredentials);
+                }
+                break;
+            case SSL:
+                // SSL authentication is handled at the client level, not request level
+                logger.debug("SSL authentication for Schema Registry requires client configuration");
+                break;
+            default:
+                logger.debug("Authentication type {} not supported for Schema Registry", authType);
+                break;
+        }
     }
     
     private String buildUrl(String baseUrl, String path) {

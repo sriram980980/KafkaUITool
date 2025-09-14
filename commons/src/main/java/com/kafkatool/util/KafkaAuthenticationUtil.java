@@ -116,10 +116,7 @@ public class KafkaAuthenticationUtil {
     }
     
     private static void configureSaslSsl(Properties props, AuthenticationConfig config) {
-        // First configure SSL
-        configureSsl(props, config);
-        
-        // Then override security protocol for SASL over SSL
+        // Set security protocol for SASL over SSL
         props.put("security.protocol", "SASL_SSL");
         
         // Configure SASL mechanism based on username/password presence
@@ -132,6 +129,23 @@ public class KafkaAuthenticationUtil {
                 config.getPassword()
             );
             props.put("sasl.jaas.config", jaasConfig);
+        }
+        
+        // Optionally configure SSL properties if truststore/keystore are provided
+        if (config.getKeystoreLocation() != null && !config.getKeystoreLocation().isEmpty()) {
+            props.put("ssl.keystore.location", config.getKeystoreLocation());
+        }
+        if (config.getKeystorePassword() != null && !config.getKeystorePassword().isEmpty()) {
+            props.put("ssl.keystore.password", config.getKeystorePassword());
+        }
+        if (config.getKeyPassword() != null && !config.getKeyPassword().isEmpty()) {
+            props.put("ssl.key.password", config.getKeyPassword());
+        }
+        if (config.getTruststoreLocation() != null && !config.getTruststoreLocation().isEmpty()) {
+            props.put("ssl.truststore.location", config.getTruststoreLocation());
+        }
+        if (config.getTruststorePassword() != null && !config.getTruststorePassword().isEmpty()) {
+            props.put("ssl.truststore.password", config.getTruststorePassword());
         }
         
         logger.debug("Configured SASL over SSL authentication");
@@ -202,10 +216,7 @@ public class KafkaAuthenticationUtil {
                 return ValidationResult.valid();
             
             case SASL_SSL:
-                // For SASL_SSL, we need both truststore and SASL credentials
-                if (config.getTruststoreLocation() == null || config.getTruststoreLocation().isEmpty()) {
-                    return ValidationResult.invalid("Truststore location is required for SASL over SSL");
-                }
+                // For SASL_SSL, we need SASL credentials. Truststore is optional (can use default trust store)
                 if (config.getUsername() == null || config.getUsername().isEmpty()) {
                     return ValidationResult.invalid("Username is required for SASL over SSL");
                 }
