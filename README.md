@@ -241,6 +241,7 @@ The project includes Maven Wrapper, so you don't need to install Maven separatel
 git clone https://github.com/sriram980980/KafkaUITool.git
 cd KafkaUITool
 
+
 # On Windows
 .\mvnw.cmd clean compile
 .\mvnw.cmd test
