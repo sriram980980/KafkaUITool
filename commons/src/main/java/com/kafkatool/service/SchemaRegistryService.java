@@ -16,6 +16,11 @@ public interface SchemaRegistryService {
     CompletableFuture<Boolean> testConnectionAsync(String schemaRegistryUrl);
     
     /**
+     * Test connection to Schema Registry with authentication
+     */
+    CompletableFuture<Boolean> testConnectionAsync(String schemaRegistryUrl, AuthenticationType authType, AuthenticationConfig authConfig);
+    
+    /**
      * Get all subjects in the Schema Registry
      */
     CompletableFuture<List<String>> getSubjectsAsync(String schemaRegistryUrl);

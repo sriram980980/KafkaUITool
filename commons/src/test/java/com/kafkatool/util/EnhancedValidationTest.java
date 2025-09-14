@@ -131,14 +131,43 @@ public class EnhancedValidationTest {
         AuthenticationConfig config = new AuthenticationConfig();
         config.setUsername("testuser");
         config.setPassword("testpass");
-        // Missing truststore
+        // Missing truststore - should be valid now (truststore is optional for SASL_SSL)
+        
+        KafkaAuthenticationUtil.ValidationResult result = 
+            KafkaAuthenticationUtil.validateAuthenticationConfigDetailed(AuthenticationType.SASL_SSL, config);
+        
+        assertTrue(result.isValid());
+        assertNull(result.getErrorMessage());
+    }
+    
+    @Test
+    public void testSASLSSLMissingUsername() {
+        AuthenticationConfig config = new AuthenticationConfig();
+        config.setPassword("testpass");
+        config.setTruststoreLocation("/path/to/truststore.jks");
+        // Missing username - should fail
         
         KafkaAuthenticationUtil.ValidationResult result = 
             KafkaAuthenticationUtil.validateAuthenticationConfigDetailed(AuthenticationType.SASL_SSL, config);
         
         assertFalse(result.isValid());
         assertNotNull(result.getErrorMessage());
-        assertTrue(result.getErrorMessage().contains("Truststore location is required"));
+        assertTrue(result.getErrorMessage().contains("Username is required"));
+    }
+    
+    @Test
+    public void testSASLSSLMissingPassword() {
+        AuthenticationConfig config = new AuthenticationConfig();
+        config.setUsername("testuser");
+        config.setTruststoreLocation("/path/to/truststore.jks");
+        // Missing password - should fail
+        
+        KafkaAuthenticationUtil.ValidationResult result = 
+            KafkaAuthenticationUtil.validateAuthenticationConfigDetailed(AuthenticationType.SASL_SSL, config);
+        
+        assertFalse(result.isValid());
+        assertNotNull(result.getErrorMessage());
+        assertTrue(result.getErrorMessage().contains("Password is required"));
     }
     
     @Test
